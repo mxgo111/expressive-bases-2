@@ -170,53 +170,6 @@ class NLM(nn.Module):
         self.print_freq = hyp["train_print_freq"]
         self.total_epochs = hyp["total_epochs"]
 
-    # def train(self, x_train, y_train):
-    #     # optimize loss to learn network
-    #     def mle_loss():
-    #         y_pred = self.final_layer(self.basis(x_train))
-    #         loss = torch.mean(torch.sum(torch.pow(self.final_layer(self.basis(x_train)) - y_train, 2.0), -1))
-    #         return loss, (self.basis, self.final_layer)
-    #
-    #     (self.basis, self.final_layer), loss = self.train_objective(
-    #         list(self.basis.parameters()) + list(self.final_layer.parameters()),
-    #         mle_loss,
-    #         lr=self.lr,
-    #         print_freq=1000
-    #     )
-    #
-    # def train_objective(self, params, loss_fn, lr=0.01, l2=0.0, epochs=4000, print_freq=100):
-    #     '''
-    #     Optimizes 'loss_fn' with respect to 'params'
-    #     'loss_fn' must take no arguments, and must return a tuple of two:
-    #     the value of the loss, and the model.
-    #     '''
-    #
-    #     best_model = None
-    #     min_loss = float('inf')
-    #
-    #     optimizer = optim.Adam(params, lr=lr, weight_decay=l2)
-    #     try:
-    #         for epoch in range(epochs):
-    #             optimizer.zero_grad()
-    #
-    #             # save loss and model if loss is the smallest observed so far
-    #             loss, model = loss_fn()
-    #             if loss.item() < min_loss:
-    #                 min_loss = loss.item()
-    #                 best_model = copy.deepcopy(model)
-    #
-    #             loss.backward()
-    #             optimizer.step()
-    #
-    #             if epoch % print_freq == 0:
-    #                 print('Epoch {}: loss = {}'.format(epoch, loss.item()))
-    #     except KeyboardInterrupt:
-    #         print('Interrupted...')
-    #
-    #     print('Final Loss = {}'.format(min_loss))
-    #     import sys; sys.exit()
-    #     return best_model, min_loss
-
 
     def train(self, x_train, y_train, epochs):
 
@@ -272,7 +225,6 @@ class NLM(nn.Module):
         self.model.infer_posterior(self.basis(x_train), y_train)
 
     def visualize_posterior_predictive(self):
-        # asdfasdfd
         pass
 
     def visualize_prior_predictive(self):

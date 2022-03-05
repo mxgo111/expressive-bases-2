@@ -46,17 +46,11 @@ def run_single_model(hyp):
     all_epochs = hyp["total_epochs"].epochs
     training_epochs = [all_epochs[0]] + list(np.array(all_epochs[1:]) - np.array(all_epochs[:-1]))
 
-    for epochs in training_epochs:
+    for i, epochs in enumerate(training_epochs):
         model.train(x_train, y_train, epochs=epochs)
-        # model.train(x_train, y_train)
-        sys.exit()
-        all_models.append(copy.deepcopy(model))
-
-    for (model, trained_epochs) in zip(all_models, all_epochs):
-        analyze(hyp, model, x_train, y_train, trained_epochs=trained_epochs)
+        analyze(hyp, model, x_train, y_train, trained_epochs=all_epochs[i])
 
 
 if __name__ == "__main__":
     # testing multiple runs
-    firstconfig = FirstConfig()
-    run_multiple_models(firstconfig)
+    run_multiple_models(SecondConfig())

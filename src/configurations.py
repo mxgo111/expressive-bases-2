@@ -1,6 +1,7 @@
 '''
 Instructions: Don't delete any configurations, but instead inherit and make modifications as necessary!
 '''
+import numpy as np
 
 class MultipleRuns():
     """
@@ -40,16 +41,16 @@ class BaseConfig():
         self.hyp["basis"] = "FullyConnected"
         self.hyp["final_layer"] = "FullyConnected"
         self.hyp["model"] = "BayesianRegression"
-        self.hyp["activation"] = MultipleRuns(["ReLU"])
+        self.hyp["activation"] = "ReLU"
         self.hyp["num_bases"] = 20
         self.hyp["layers"] = [1, 50, self.hyp["num_bases"], 1]
         self.hyp["output_activation"] = True
         self.hyp["bias"] = True
         self.hyp["rand_init_mean"] = 0.0
         self.hyp["rand_init_std"] = 1.0
-        self.hyp["rand_init_seed"] = MultipleRuns([2, 5])
-        self.hyp["w_prior_var"] = MultipleRuns([1.0])
-        self.hyp["loss"] = MultipleRuns(["MLE"])
+        self.hyp["rand_init_seed"] = MultipleRuns([0, 1]) # goto for multiple runs of the same parameters
+        self.hyp["w_prior_var"] = 1.0
+        self.hyp["loss"] = "MLE"
         self.hyp["k"] = 0.1 # relevant if using MAP Loss
         self.hyp["learning_rate"] = 1e-3
         self.hyp["optimizer_weight_decay_l2"] = 0.0
@@ -68,3 +69,15 @@ class FirstConfig(BaseConfig):
         super().__init__()
         # experiment_name
         self.hyp["experiment_name"] = "TestExperiment"
+
+
+# First Configuration
+class SecondConfig(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "SecondExperiment"
+        self.hyp["layers"] = MultipleRuns([[1, 50, self.hyp["num_bases"], 1],
+                                           [1, 20, self.hyp["num_bases"], 1]])
+        self.hyp["rand_init_seed"] = MultipleRuns([3, 5])
+        self.hyp["asdfasdf"] = 1234

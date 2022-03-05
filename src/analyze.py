@@ -7,28 +7,37 @@ def analyze(hyp, model, x_train, y_train, trained_epochs=None):
 
     # create experiments folder if not there
     experiment_path = "../experiments/" + hyp["experiment_name"]
-    os.makedirs(path, exist_ok=True)
+    os.makedirs(experiment_path, exist_ok=True)
+    data_path = experiment_path + "/data.pkl"
 
     # if the data.pkl file exists, add to it
     # otherwise create a new file
-    if len(glob.glob('data.pkl', recursive=True)) == 0:
+    if len(glob.glob(data_path)) == 0:
         data = {}
         existing_data = 0
     else:
-        data = pd.read_pickle('data.pkl')
+        data = pd.read_pickle(data_path)
         data = data.to_dict() # convert to dictionary
+        for key in data:
+            data[key] = list(data[key].values())
         existing_data = len(list(data.keys()))
 
     # trained_epochs (note: different from total_epochs!)
     if trained_epochs == None:
-        trained_epochs = hyp["total_epochs"]
-
+        trained_epochs = pd.NA
 
     # DO STUFF LIKE UNCERTAINTY GAP + EFFECTIVE DIMENSIONALITY HERE
-
+    #
+    #
+    #
+    #
+    #
+    #
+    #
 
     # add data to file
     cols = list(hyp.keys())
+    cols.remove("total_epochs")
     cols += [
         "trained_epochs"
     ]
@@ -42,10 +51,11 @@ def analyze(hyp, model, x_train, y_train, trained_epochs=None):
                 data[col] = []
 
         # append new data
-        if col in hyp:
+        if col in hyp and col != "total_epochs":
             data[col].append(hyp[col])
 
     data["trained_epochs"].append(trained_epochs)
 
+    # save data
     df = pd.DataFrame(data)
-    df.to_pickle('data.pkl')
+    df.to_pickle(data_path, protocol=4)
