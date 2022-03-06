@@ -20,11 +20,15 @@ def analyze(hyp, model, x_train, y_train, trained_epochs=None):
         data = {}
         existing_data = 0
     else:
-        data = pd.read_pickle(data_path)
-        data = data.to_dict() # convert to dictionary
-        for key in data:
-            data[key] = list(data[key].values())
-        existing_data = len(data[key])
+        try:
+            data = pd.read_pickle(data_path)
+            data = data.to_dict() # convert to dictionary
+            for key in data:
+                data[key] = list(data[key].values())
+            existing_data = len(data[key])
+        except:
+            data = {}
+            existing_data = 0
 
     # trained_epochs (note: different from total_epochs!)
     if trained_epochs == None:
@@ -76,8 +80,6 @@ def analyze(hyp, model, x_train, y_train, trained_epochs=None):
     model.visualize_bases(x_train, y_train, savefig=visualize_bases_path)
     model.visualize_posterior_predictive(x_train, y_train, savefig=visualize_posterior_path)
     model.visualize_prior_predictive(x_train, y_train, savefig=visualize_prior_path)
-
-    pprint(data)
 
     # save data
     df = pd.DataFrame(data)

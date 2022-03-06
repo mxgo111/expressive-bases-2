@@ -71,6 +71,7 @@ class BayesianRegression(nn.Module):
         self.output_var = hyp["output_var"]
 
         self.posterior = None
+        self.posterior_mean = None
 
     def data_to_features(self, x):
         '''
@@ -118,7 +119,10 @@ class BayesianRegression(nn.Module):
         return self.posterior, posterior_mean
 
     def sample_posterior_predictive(self, x, num_samples, add_noise=True):
-        assert(self.posterior is not None)
+        # assert(self.posterior is not None)
+        # if there was no training, just sample from prior
+        if self.posterior == None:
+            return self.sample_prior_predictive(x, num_samples, add_noise=add_noise)
 
         phi = self.data_to_features(x)
 
@@ -333,7 +337,13 @@ class NLM(nn.Module):
             row, col = j//numcols, j % numcols
             axs[row,col].plot(x_vals, functions[i])
             axs[row,col].scatter(x_train_np, basis_train_np[:,i], c="red") # scatterplot training data
-            axs[row,col].set_title(f"w_posterior_mean={np.round(self.model.posterior_mean.detach().cpu().numpy()[i], 3)}")
+
+            if self.model.posterior_mean == None:
+                w_posterior_mean = 0
+            else:
+                w_posterior_mean = self.model.posterior_mean.detach().cpu().numpy()[i]
+
+            axs[row,col].set_title(f"w_posterior_mean={np.round(w_posterior_mean, 3)}")
         plt.tight_layout()
 
         if savefig != None:

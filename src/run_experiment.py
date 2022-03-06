@@ -61,4 +61,4 @@ def run_single_model(hyp):
 
 if __name__ == "__main__":
     # testing multiple runs
-    run_multiple_models(TestingModels())
+    run_multiple_models(TestingEpoch0())
