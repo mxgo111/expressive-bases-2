@@ -7,14 +7,6 @@ def cubic(x):
 def sine(x):
     return torch.sin(x)
 
-def add_output_noise(r, output_var):
-    '''
-    Adds Gaussian noise to a tensor
-    '''
-    eps = torch.nn.init.normal_(torch.zeros_like(r), std=math.sqrt(output_var))
-    assert(eps.size() == r.size())
-    return r + eps
-
 def generate_data(hyp, random_seed=0, test=False):
     '''
     Generates data according to hyperparameters specified

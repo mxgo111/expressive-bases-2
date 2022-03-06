@@ -25,6 +25,15 @@ def to_np(v):
     return v.detach().numpy()
 
 
+def add_output_noise(r, output_var):
+    '''
+    Adds Gaussian noise to a tensor
+    '''
+    eps = torch.nn.init.normal_(torch.zeros_like(r), std=math.sqrt(output_var))
+    assert(eps.size() == r.size())
+    return r + eps
+
+
 def area(upper, lower, h):
     """
     Calculate the area between f1 and f2 over the interval [x1, x2] using n points in finite estimation

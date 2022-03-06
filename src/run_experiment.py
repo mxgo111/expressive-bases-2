@@ -42,9 +42,17 @@ def run_single_model(hyp):
     model = NLM(hyp)
 
     # output several models at different levels of training
-    all_models = []
     all_epochs = hyp["total_epochs"].epochs
     training_epochs = [all_epochs[0]] + list(np.array(all_epochs[1:]) - np.array(all_epochs[:-1]))
+
+    for i in range(1, len(training_epochs)):
+        assert training_epochs[i] > 0
+
+    # check for 0 training (just random init model) at the beginning
+    if training_epochs[0] == 0:
+        analyze(hyp, model, x_train, y_train, trained_epochs=0)
+        training_epochs = training_epochs[1:]
+        all_epochs = all_epochs[1:]
 
     for i, epochs in enumerate(training_epochs):
         model.train(x_train, y_train, epochs=epochs)
@@ -53,4 +61,4 @@ def run_single_model(hyp):
 
 if __name__ == "__main__":
     # testing multiple runs
-    run_multiple_models(SecondConfig())
+    run_multiple_models(TestingModels())

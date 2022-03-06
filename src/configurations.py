@@ -58,9 +58,10 @@ class BaseConfig():
 
         # sampling and other parameters
         self.hyp["train_print_freq"] = 1000
-        self.hyp["posterior_predictive_samples"] = 3000
+        self.hyp["posterior_prior_predictive_samples"] = 3000
         self.hyp["add_output_noise_prior_predictive_sampling"] = True
         self.hyp["add_output_noise_posterior_predictive_sampling"] = True
+        self.hyp["num_points_linspace_visualize"] = 500
 
 
 # First Configuration
@@ -71,7 +72,7 @@ class FirstConfig(BaseConfig):
         self.hyp["experiment_name"] = "TestExperiment"
 
 
-# First Configuration
+# Second Configuration
 class SecondConfig(BaseConfig):
     def __init__(self):
         super().__init__()
@@ -80,4 +81,14 @@ class SecondConfig(BaseConfig):
         self.hyp["layers"] = MultipleRuns([[1, 50, self.hyp["num_bases"], 1],
                                            [1, 20, self.hyp["num_bases"], 1]])
         self.hyp["rand_init_seed"] = MultipleRuns([3, 5])
-        self.hyp["asdfasdf"] = 1234
+
+
+# Configurations
+class TestingModels(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "SavingModelsExperiment"
+        self.hyp["layers"] = MultipleRuns([[1, 50, self.hyp["num_bases"], 1],
+                                           [1, 20, self.hyp["num_bases"], 1]])
+        self.hyp["rand_init_seed"] = MultipleRuns([3, 5])

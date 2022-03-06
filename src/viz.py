@@ -1,7 +1,7 @@
 from util import *
 
 
-def plot_1d_posterior_predictive(x_train, y_train, x_viz, y_pred):
+def plot_1d_posterior_predictive(x_train, y_train, x_viz, y_pred, savefig=None):
     assert(len(x_train.shape) == 2 and x_train.shape[-1] == 1)
     assert(len(y_train.shape) == 2 and y_train.shape[-1] == 1)
     assert(len(x_viz.shape) == 2 and x_viz.shape[-1] == 1)
@@ -33,10 +33,10 @@ def plot_1d_posterior_predictive(x_train, y_train, x_viz, y_pred):
     ax.set_title('Posterior Predictive')
     ax.legend()
 
-    plt.show()
+    if savefig != None:
+        plt.savefig(savefig)
 
-
-def plot_basis_functions_1d(num_final_layers, x_vals, basis, x_train, posterior_mean, numcols=12):
+def plot_basis_functions_1d(num_final_layers, x_vals, basis, x_train, posterior_mean, numcols=12, savefig=None):
     basis_vals = basis(torch.tensor(x_vals.reshape(-1, 1)))
 
     # sort functions
@@ -59,6 +59,8 @@ def plot_basis_functions_1d(num_final_layers, x_vals, basis, x_train, posterior_
         axs[row,col].scatter(x_train_np, basis_train_np[:,i], c="red") # scatterplot training data
         axs[row,col].set_title(f"w_posterior_mean={np.round(posterior_mean.detach().cpu().numpy()[i], 3)}")
     plt.tight_layout()
-    plt.show()
+
+    if savefig != None:
+        plt.savefig(savefig)
 
     return basis_vals

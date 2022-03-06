@@ -113,6 +113,7 @@ class BayesianRegression(nn.Module):
         assert(len(phi.shape) == 2)
 
         self.posterior, posterior_mean = self.bayesian_linear_regression_posterior_1d(phi, y)
+        self.posterior_mean = posterior_mean
 
         return self.posterior, posterior_mean
 
@@ -150,6 +151,7 @@ class NLM(nn.Module):
     def __init__(self, hyp):
         super(NLM, self).__init__()
 
+        self.hyp = hyp
         self.model = BayesianRegression(hyp)
         self.basis = FullyConnected(hyp, layers=hyp["layers"][:-1])
         self.final_layer = FullyConnected(hyp, layers=hyp["layers"][-2:], is_final_layer=True)
@@ -170,6 +172,10 @@ class NLM(nn.Module):
         self.print_freq = hyp["train_print_freq"]
         self.total_epochs = hyp["total_epochs"]
 
+        self.model_id = None
+
+    def set_id(self, model_id):
+        self.model_id = model_id
 
     def train(self, x_train, y_train, epochs):
 
@@ -224,8 +230,113 @@ class NLM(nn.Module):
         (self.basis, self.final_layer), self.min_loss = best_model, min_loss
         self.model.infer_posterior(self.basis(x_train), y_train)
 
-    def visualize_posterior_predictive(self):
-        pass
 
-    def visualize_prior_predictive(self):
-        pass
+    def visualize_posterior_predictive(self, x_train, y_train, savefig=None):
+        x_viz = ftens_cuda(np.linspace(self.hyp["dataset_min_range"], self.hyp["dataset_max_range"], self.hyp["num_points_linspace_visualize"])).unsqueeze(-1)
+        y_pred = self.model.sample_posterior_predictive(self.basis(x_viz), self.hyp["posterior_prior_predictive_samples"])
+
+        # TODO: Clean up
+        assert(len(x_train.shape) == 2 and x_train.shape[-1] == 1)
+        assert(len(y_train.shape) == 2 and y_train.shape[-1] == 1)
+        assert(len(x_viz.shape) == 2 and x_viz.shape[-1] == 1)
+        assert(len(y_pred.shape) == 2 and y_pred.shape[0] == x_viz.shape[0])
+
+        # make sure x_viz is sorted in ascending order
+        x_viz = to_np(x_viz.squeeze())
+        assert(np.all(x_viz[:-1] <= x_viz[1:]))
+
+        fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+
+        # plot predictive intervals
+        for picp, alpha in zip([50.0, 68.0, 95.0], [0.4, 0.3, 0.2]):
+            lower, upper = get_coverage_bounds(to_np(y_pred), picp)
+
+            ax.fill_between(
+                x_viz, lower, upper, label='{}%-PICP'.format(picp), color='steelblue', alpha=alpha,
+            )
+
+        # plot predictive mean
+        pred_mean = to_np(torch.mean(y_pred, -1))
+        ax.plot(x_viz, pred_mean, color='blue', lw=3, label='Predictive Mean')
+
+        # plot training data
+        ax.scatter(x_train, y_train, color='red', s=10.0, zorder=10, label='Training Data')
+
+        ax.set_xlabel('$x$')
+        ax.set_ylabel('$y$')
+        ax.set_title('Posterior Predictive')
+        ax.legend()
+
+        if savefig != None:
+            plt.savefig(savefig)
+
+
+    def visualize_prior_predictive(self, x_train, y_train, savefig=None):
+        x_viz = ftens_cuda(np.linspace(self.hyp["dataset_min_range"], self.hyp["dataset_max_range"], self.hyp["num_points_linspace_visualize"])).unsqueeze(-1)
+        y_pred = self.model.sample_prior_predictive(self.basis(x_viz), self.hyp["posterior_prior_predictive_samples"])
+
+        # TODO: Clean up
+        assert(len(x_train.shape) == 2 and x_train.shape[-1] == 1)
+        assert(len(y_train.shape) == 2 and y_train.shape[-1] == 1)
+        assert(len(x_viz.shape) == 2 and x_viz.shape[-1] == 1)
+        assert(len(y_pred.shape) == 2 and y_pred.shape[0] == x_viz.shape[0])
+
+        # make sure x_viz is sorted in ascending order
+        x_viz = to_np(x_viz.squeeze())
+        assert(np.all(x_viz[:-1] <= x_viz[1:]))
+
+        fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+
+        # plot predictive intervals
+        for picp, alpha in zip([50.0, 68.0, 95.0], [0.4, 0.3, 0.2]):
+            lower, upper = get_coverage_bounds(to_np(y_pred), picp)
+
+            ax.fill_between(
+                x_viz, lower, upper, label='{}%-PICP'.format(picp), color='steelblue', alpha=alpha,
+            )
+
+        # plot predictive mean
+        pred_mean = to_np(torch.mean(y_pred, -1))
+        ax.plot(x_viz, pred_mean, color='blue', lw=3, label='Predictive Mean')
+
+        # plot training data
+        ax.scatter(x_train, y_train, color='red', s=10.0, zorder=10, label='Training Data')
+
+        ax.set_xlabel('$x$')
+        ax.set_ylabel('$y$')
+        ax.set_title('Posterior Predictive')
+        ax.legend()
+
+        if savefig != None:
+            plt.savefig(savefig)
+
+    def visualize_bases(self, x_train, y_train, numcols=12, savefig=None):
+        x_vals = np.linspace(self.hyp["dataset_min_range"], self.hyp["dataset_max_range"], self.hyp["num_points_linspace_visualize"])
+        basis_vals = self.basis(torch.tensor(x_vals.reshape(-1, 1)))
+        num_final_layers = self.hyp["num_bases"]
+
+        # sort functions
+        def argsort(seq):
+            # https://stackoverflow.com/questions/3382352/equivalent-of-numpy-argsort-in-basic-python
+            return sorted(range(len(seq)), key=lambda x: abs(max(seq[x]) - min(seq[x])))
+
+        functions = [basis_vals[:, i].detach().cpu().numpy() for i in range(num_final_layers)]
+        argsorted_basis = argsort(functions)
+
+        # training data
+        x_train_np = x_train.detach().cpu().numpy().squeeze()
+        basis_train_np = self.basis(x_train).detach().cpu().numpy()
+
+        fig, axs = plt.subplots(num_final_layers//numcols + 1, numcols, figsize=(40, 15))
+        for j in range(num_final_layers):
+            i = argsorted_basis[j]
+            row, col = j//numcols, j % numcols
+            axs[row,col].plot(x_vals, functions[i])
+            axs[row,col].scatter(x_train_np, basis_train_np[:,i], c="red") # scatterplot training data
+            axs[row,col].set_title(f"w_posterior_mean={np.round(self.model.posterior_mean.detach().cpu().numpy()[i], 3)}")
+        plt.tight_layout()
+
+        if savefig != None:
+            plt.savefig(savefig)
+
+        return basis_vals
