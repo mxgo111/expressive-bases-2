@@ -54,7 +54,7 @@ class BaseConfig():
         self.hyp["k"] = 0.1 # relevant if using MAP Loss
         self.hyp["learning_rate"] = 1e-3
         self.hyp["optimizer_weight_decay_l2"] = 0.0
-        self.hyp["total_epochs"] = MultipleModels([3000, 5000])
+        self.hyp["total_epochs"] = 5000
 
         # sampling and other parameters
         self.hyp["train_print_freq"] = 1000
@@ -70,34 +70,8 @@ class FirstConfig(BaseConfig):
         super().__init__()
         # experiment_name
         self.hyp["experiment_name"] = "TestExperiment"
-
-
-# Second Configuration
-class SecondConfig(BaseConfig):
-    def __init__(self):
-        super().__init__()
-        # experiment_name
-        self.hyp["experiment_name"] = "SecondExperiment"
-        self.hyp["layers"] = MultipleRuns([[1, 50, self.hyp["num_bases"], 1],
-                                           [1, 20, self.hyp["num_bases"], 1]])
-        self.hyp["rand_init_seed"] = MultipleRuns([3, 5])
-
-
-# Configurations
-class TestingModels(BaseConfig):
-    def __init__(self):
-        super().__init__()
-        # experiment_name
-        self.hyp["experiment_name"] = "SavingModelsExperiment"
-        self.hyp["layers"] = MultipleRuns([[1, 50, self.hyp["num_bases"], 1],
-                                           [1, 20, self.hyp["num_bases"], 1]])
-        self.hyp["rand_init_seed"] = MultipleRuns([3, 5])
-
-# Configurations
-class TestingEpoch0(BaseConfig):
-    def __init__(self):
-        super().__init__()
-        # experiment_name
-        self.hyp["experiment_name"] = "TestingEpoch0"
-        self.hyp["rand_init_seed"] = MultipleRuns([3, 5])
-        self.hyp["total_epochs"] = MultipleModels([0, 3000, 5000])
+        self.hyp["rand_init_seed"] = MultipleRuns([0, 1])
+        self.hyp["total_epochs"] = MultipleModels([0, 100, 1000])
+        self.hyp["train_dataset_size"] = 20
+        self.hyp["num_bases"] = 40
+        self.hyp["layers"] = [1, 50, self.hyp["num_bases"], 1]

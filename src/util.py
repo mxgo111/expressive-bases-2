@@ -34,7 +34,11 @@ def add_output_noise(r, output_var):
     return r + eps
 
 
-def area(upper, lower, h):
+def get_unique_id():
+    return str(int(time.time() * 1e6) % int(1e13)) # get time for id
+
+
+def get_area(upper, lower, h):
     """
     Calculate the area between f1 and f2 over the interval [x1, x2] using n points in finite estimation
     """
@@ -77,12 +81,12 @@ def get_uncertainty_in_gap(model, basis, x_train, y_train, n_points=1000, picp=9
     y_pred = model.sample_posterior_predictive(basis(gap), n_points)
     lower, upper = get_coverage_bounds(to_np(y_pred), picp)
 
-    area = area(upper, lower, h)
+    area = get_area(upper, lower, h)
 
     return area
 
 
-def eff_dim(evals, z):
+def get_eff_dim(evals, z):
     """
     Computes effective dimensionality of matrix
     """
@@ -122,4 +126,4 @@ def compute_eff_dim(basis_vals, z=1, visual=False):
         plt.title("Eigenvalues of correlation matrix")
         plt.show()
 
-    return eff_dim(evals, z)
+    return get_eff_dim(evals, z)

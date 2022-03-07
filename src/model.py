@@ -274,6 +274,8 @@ class NLM(nn.Module):
         if savefig != None:
             plt.savefig(savefig)
 
+        plt.close()
+
 
     def visualize_prior_predictive(self, x_train, y_train, savefig=None):
         x_viz = ftens_cuda(np.linspace(self.hyp["dataset_min_range"], self.hyp["dataset_max_range"], self.hyp["num_points_linspace_visualize"])).unsqueeze(-1)
@@ -308,11 +310,13 @@ class NLM(nn.Module):
 
         ax.set_xlabel('$x$')
         ax.set_ylabel('$y$')
-        ax.set_title('Posterior Predictive')
+        ax.set_title('Prior Predictive')
         ax.legend()
 
         if savefig != None:
             plt.savefig(savefig)
+
+        plt.close()
 
     def visualize_bases(self, x_train, y_train, numcols=12, savefig=None):
         x_vals = np.linspace(self.hyp["dataset_min_range"], self.hyp["dataset_max_range"], self.hyp["num_points_linspace_visualize"])
@@ -348,5 +352,7 @@ class NLM(nn.Module):
 
         if savefig != None:
             plt.savefig(savefig)
+
+        plt.close()
 
         return basis_vals
