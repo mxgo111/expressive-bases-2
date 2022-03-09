@@ -35,7 +35,8 @@ def add_output_noise(r, output_var):
 
 
 def get_unique_id():
-    return str(int(time.time() * 1e6) % int(1e13)) # get time for id
+    # get time for id
+    return str(int(time.time() * 1e6) % int(1e13))
 
 
 def get_area(upper, lower, h):
