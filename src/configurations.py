@@ -75,3 +75,16 @@ class FirstConfig(BaseConfig):
         self.hyp["train_dataset_size"] = 20
         self.hyp["num_bases"] = 40
         self.hyp["layers"] = [1, 50, self.hyp["num_bases"], 1]
+
+# First Configuration
+class SecondConfig(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "LeakyReLUTest"
+        self.hyp["rand_init_seed"] = MultipleRuns([0, 0])
+        self.hyp["total_epochs"] = MultipleModels([0, 100])
+        self.hyp["train_dataset_size"] = 20
+        self.hyp["num_bases"] = 40
+        self.hyp["layers"] = [1, 50, self.hyp["num_bases"], 1]
+        self.hyp["activation"] = MultipleRuns(["LeakyReLU", "ReLU"])

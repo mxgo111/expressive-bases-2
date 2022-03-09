@@ -13,6 +13,11 @@ def analyze_model(hyp, model, x_train, y_train, trained_epochs=None, model_init_
     os.makedirs(models_path, exist_ok=True)
 
     data_path = experiment_path + "/data.pkl"
+    analyze_notebook_path = experiment_path + "/analyze_data.ipynb"
+
+    # copy analysis notebook if it doesn't exist
+    if not os.path.exists(analyze_notebook_path):
+        shutil.copyfile("analyze_data_template.ipynb", analyze_notebook_path)
 
     # if the data.pkl file exists, add to it
     # otherwise create a new file

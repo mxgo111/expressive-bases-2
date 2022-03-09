@@ -71,4 +71,4 @@ def run_single_model(hyp):
 
 if __name__ == "__main__":
     # testing multiple runs
-    run_multiple_models(FirstConfig())
+    run_multiple_models(SecondConfig())
