@@ -287,6 +287,10 @@ class NLM(nn.Module):
 
         (self.basis, self.final_layer), self.min_loss = best_model, min_loss
         self.model.infer_posterior(self.basis(x_train), y_train)
+        
+        negative_mll = self.model.negative_marginal_log_likelihood(self.hyp["w_prior_var"], self.hyp["output_var"], self.basis(x_train),y_train)
+  
+        print('Negative marginal log likelhood =', negative_mll) # the smaller the better 
 
 
     def visualize_posterior_predictive(self, x_train, y_train, savefig=None):
