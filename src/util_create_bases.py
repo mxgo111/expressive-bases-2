@@ -13,13 +13,13 @@ def create_legendre_basis(deg):
     return legendre_basis
 
 def create_random_linear_basis(num_bases):
-    global random_basis
     slopes = np.random.uniform(low=-5.0, high=5.0, size=num_bases)
     intercepts = np.random.uniform(low=-5.0, high=5.0, size=num_bases)
+    global random_linear_basis
     def random_linear_basis(x):
         basis_vals = np.zeros((len(x), num_bases))
         for i in range(num_bases):
-            basis_vals[:,i] = np.multiply(slopes, x) + intercepts
+            basis_vals[:,i] = slopes[i] * x.flatten() + intercepts[i]
         return torch.tensor(basis_vals)
     return random_linear_basis
 
