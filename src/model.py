@@ -182,8 +182,8 @@ class NLM(nn.Module):
             self.trainable=False
             if self.hyp["basis"] == "Legendre":
                 self.basis = create_legendre_basis(self.hyp["num_bases"])
-
-
+            if self.hyp["basis"] == "RandomLinear":
+                self.basis = create_random_linear_basis(self.hyp["num_bases"])
 
         self.model_id = None
 
@@ -249,7 +249,7 @@ class NLM(nn.Module):
         self.model.infer_posterior(self.basis(x_train), y_train)
 
     def visualize_posterior_predictive(self, x_train, y_train, savefig=None):
-        range = self.hyp["dataset_max_range"] - self.hyp["dataset_min_range"]
+        range = (self.hyp["dataset_max_range"] - self.hyp["dataset_min_range"]) // 4
         x_viz = ftens_cuda(np.linspace(self.hyp["dataset_min_range"] - range, self.hyp["dataset_max_range"] + range, self.hyp["num_points_linspace_visualize"])).unsqueeze(-1)
         y_pred = self.model.sample_posterior_predictive(self.basis(x_viz), self.hyp["posterior_prior_predictive_samples"])
 

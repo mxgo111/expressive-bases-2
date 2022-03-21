@@ -103,6 +103,34 @@ class ThirdConfig(BaseConfig):
         self.hyp["gap_max_range"] = 4.5
         self.hyp["dataset"] = "xsinx"
 
+class RetestingLegendreConfig(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "LegendreReTest"
+        self.hyp["basis"] = "Legendre"
+        self.hyp["num_bases"] = 7
+        self.hyp["dataset_min_range"] = 0
+        self.hyp["dataset_max_range"] = 6
+        self.hyp["gap_min_range"] = 2
+        self.hyp["gap_max_range"] = 4.5
+        self.hyp["dataset"] = "xsinx"
+
+
+class TestingLinearConfig(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "RandomLinear"
+        self.hyp["basis"] = "RandomLinear"
+        self.hyp["num_bases"] = 7
+        self.hyp["dataset_min_range"] = -1
+        self.hyp["dataset_max_range"] = 1
+        self.hyp["gap_min_range"] = -0.2
+        self.hyp["gap_max_range"] = 0.2
+        self.hyp["dataset"] = "xsinx"
+
+
 class FourthConfig(BaseConfig):
     def __init__(self):
         super().__init__()
