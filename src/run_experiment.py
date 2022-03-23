@@ -2,7 +2,7 @@ from util import *
 from configurations import *
 from generate_data import generate_data
 from model import NLM
-from analyze_model import analyze_model
+from analyze_model import analyze_model, analyze_gp
 
 def run_multiple_models(config_object):
     """
@@ -39,39 +39,48 @@ def run_single_model(hyp):
     analyze results (put into dataframe)
     """
     x_train, y_train = generate_data(hyp)
-    model = NLM(hyp)
+    if hyp["model"] == "BayesianRegression":
+        model = NLM(hyp)
 
-    # output several models at different levels of training
-    if isinstance(hyp["total_epochs"], MultipleModels):
-        all_epochs = hyp["total_epochs"].epochs
-    elif isinstance(hyp["total_epochs"], int):
-        all_epochs = [hyp["total_epochs"]]
-    else:
-        print("total_epochs not correctly specified")
-        assert False
+        # output several models at different levels of training
+        if isinstance(hyp["total_epochs"], MultipleModels):
+            all_epochs = hyp["total_epochs"].epochs
+        elif isinstance(hyp["total_epochs"], int):
+            all_epochs = [hyp["total_epochs"]]
+        else:
+            print("total_epochs not correctly specified")
+            assert False
 
-    # that way all models initialized the same way have the same id
-    model_init_id = get_unique_id()
+        # that way all models initialized the same way have the same id
+        model_init_id = get_unique_id()
 
-    if model.trainable:
-        training_epochs = [all_epochs[0]] + list(np.array(all_epochs[1:]) - np.array(all_epochs[:-1]))
+        if model.trainable:
+            training_epochs = [all_epochs[0]] + list(np.array(all_epochs[1:]) - np.array(all_epochs[:-1]))
 
-        for i in range(1, len(training_epochs)):
-            assert training_epochs[i] > 0
+            for i in range(1, len(training_epochs)):
+                assert training_epochs[i] > 0
 
-        # check for 0 training (just random init model) at the beginning
-        if training_epochs[0] == 0:
-            analyze_model(hyp, model, x_train, y_train, trained_epochs=0, model_init_id=model_init_id)
-            training_epochs = training_epochs[1:]
-            all_epochs = all_epochs[1:]
+            # check for 0 training (just random init model) at the beginning
+            if training_epochs[0] == 0:
+                analyze_model(hyp, model, x_train, y_train, trained_epochs=0, model_init_id=model_init_id)
+                training_epochs = training_epochs[1:]
+                all_epochs = all_epochs[1:]
 
-        for i, epochs in enumerate(training_epochs):
-            model.train(x_train, y_train, epochs=epochs)
+            for i, epochs in enumerate(training_epochs):
+                model.train(x_train, y_train, epochs=epochs)
+                model.infer_posterior(x_train, y_train)
+                analyze_model(hyp, model, x_train, y_train, trained_epochs=all_epochs[i], model_init_id=model_init_id)
+        else:
             model.infer_posterior(x_train, y_train)
-            analyze_model(hyp, model, x_train, y_train, trained_epochs=all_epochs[i], model_init_id=model_init_id)
-    else:
-        model.infer_posterior(x_train, y_train)
-        analyze_model(hyp, model, x_train, y_train, trained_epochs=None, model_init_id=model_init_id)
+            analyze_model(hyp, model, x_train, y_train, trained_epochs=None, model_init_id=model_init_id)
+
+    elif hyp["model"] == "GP":
+        model = GP(hyp)
+        analyze_gp()
+        # do stuff here
+        # create a different function
+        # copy paste most fo analyze_model
+
 
 if __name__ == "__main__":
     # testing multiple runs

@@ -151,6 +151,11 @@ class BayesianRegression(nn.Module):
         return r
 
 
+class GP():
+    # do stuff
+    pass
+
+
 class NLM(nn.Module):
     def __init__(self, hyp):
         super(NLM, self).__init__()
@@ -184,7 +189,7 @@ class NLM(nn.Module):
                 self.basis = create_legendre_basis(self.hyp["num_bases"])
             if self.hyp["basis"] == "RandomLinear":
                 self.basis = create_random_linear_basis(self.hyp["num_bases"])
-            if self.hyp["basis"] == "RandomLinear":
+            if self.hyp["basis"] == "OneBasisIsData":
                 self.basis = create_adv_basis(self.hyp["num_bases"])
 
         self.model_id = None

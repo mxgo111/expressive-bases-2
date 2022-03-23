@@ -32,7 +32,7 @@ def create_adv_basis(num_bases):
         basis_vals = np.zeros((len(x), num_bases))
         for i in range(num_bases-1):
             basis_vals[:,i] = slopes[i] * x.flatten() + intercepts[i]
-        basis_vals[:, -1] = torch.pow(x.flatten(), 3.0)
+        basis_vals[:, -1] = torch.pow(x.flatten(), 3.0) # set one basis to be cubic
         return torch.tensor(basis_vals)
     return random_adv_basis
 

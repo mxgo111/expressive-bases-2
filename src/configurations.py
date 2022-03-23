@@ -41,7 +41,7 @@ class BaseConfig():
         self.hyp["basis"] = "FullyConnected" # or Custom, Legendre, Sine+Cosine
         self.hyp["custom_basis_path"] = None # relevant if using Custom, starting from current dir
         self.hyp["final_layer"] = "FullyConnected"
-        self.hyp["model"] = "BayesianRegression"
+        self.hyp["model"] = "BayesianRegression" # if GP, ignore almost every other parameter
         self.hyp["activation"] = "ReLU"
         self.hyp["num_bases"] = 20
         self.hyp["layers"] = [1, 50, self.hyp["num_bases"], 1]
@@ -121,8 +121,8 @@ class TestingLinearConfig(BaseConfig):
     def __init__(self):
         super().__init__()
         # experiment_name
-        self.hyp["experiment_name"] = "RandomLinear"
-        self.hyp["basis"] = "RandomLinear"
+        self.hyp["experiment_name"] = "NEWEXPERIMENT"
+        self.hyp["basis"] = "OneBasisIsData"
         self.hyp["num_bases"] = 7
         self.hyp["dataset_min_range"] = -1
         self.hyp["dataset_max_range"] = 1

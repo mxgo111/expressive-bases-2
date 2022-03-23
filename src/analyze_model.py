@@ -1,5 +1,9 @@
 from util import *
 
+def analyze_gp():
+    pass
+
+
 def analyze_model(hyp, model, x_train, y_train, trained_epochs=None, model_init_id=None):
     """
     Analyzes a model and adds a data point to a dataframe
