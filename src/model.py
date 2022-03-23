@@ -149,6 +149,60 @@ class BayesianRegression(nn.Module):
         if add_noise:
             return add_output_noise(r, self.output_var)
         return r
+    
+    # define MLL loss
+    def marginal_log_likelihood(self,alpha, beta, x,y):
+        """
+        Log likelihood of the data marginalised over the weights w. See chapter 3.5 of
+        the book by Bishop of an derivation.
+        Parameters
+        ---------
+        x, y: input datapoints and corresponding y values. x is of dimension N x D
+        alpha: variance prior on weights
+        beta: output variance on y
+
+        Returns
+        -------
+        float
+            lnlikelihood + prior
+        """
+
+        # alpha = self.hyp["w_prior_var"]
+        # beta = self.hyp["output_var"]
+
+        # dimensionality of input datapoint 
+        D = x.shape[1]
+        N = x.shape[0]
+        
+        # TODO: currently x is basis(x_train)
+        # can add if using a basis function then do a transformation first 
+
+        Theta = to_np(x) 
+
+        K = beta * np.dot(Theta.T, Theta)
+        K += np.eye(Theta.shape[1]) * alpha
+        try:
+            K_inv = np.linalg.inv(K)
+        except np.linalg.linalg.LinAlgError:
+                K_inv = np.linalg.inv(K + np.random.rand(K.shape[0], K.shape[1]) * 1e-8)
+
+        m = beta * np.dot(K_inv, Theta.T)
+        m = np.dot(m, y)
+
+        mll = D / 2 * np.log(alpha)
+        mll += N / 2 * np.log(beta)
+        mll -= N / 2 * np.log(2 * np.pi)
+        mll -= beta / 2. * np.linalg.norm(y - np.dot(Theta, m), 2)
+        mll -= alpha / 2. * np.dot(m.T, m)
+        mll -= 0.5 * np.log(np.linalg.det(K) + 1e-10)
+
+
+        return mll.squeeze()
+
+
+    def negative_marginal_log_likelihood(self,alpha, beta, x,y):
+        return - self.marginal_log_likelihood(alpha, beta, x,y)
+
 
 
 class GP():
@@ -251,6 +305,12 @@ class NLM(nn.Module):
         print('Final Loss = {}'.format(min_loss))
 
         (self.basis, self.final_layer), self.min_loss = best_model, min_loss
+
+        self.model.infer_posterior(self.basis(x_train), y_train)
+        
+        negative_mll = self.model.negative_marginal_log_likelihood(self.hyp["w_prior_var"], self.hyp["output_var"], self.basis(x_train),y_train)
+  
+        # print('Negative marginal log likelhood =', negative_mll) # the smaller the better 
 
     def infer_posterior(self, x_train, y_train):
         self.model.infer_posterior(self.basis(x_train), y_train)
