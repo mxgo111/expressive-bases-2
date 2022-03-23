@@ -128,7 +128,7 @@ class TestingLinearConfig(BaseConfig):
         self.hyp["dataset_max_range"] = 1
         self.hyp["gap_min_range"] = -0.2
         self.hyp["gap_max_range"] = 0.2
-        self.hyp["dataset"] = "xsinx"
+        self.hyp["dataset"] = "cubic"
 
 
 class FourthConfig(BaseConfig):

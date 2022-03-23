@@ -24,9 +24,17 @@ def create_random_linear_basis(num_bases):
     return random_linear_basis
 
 
-
-
-
+def create_adv_basis(num_bases):
+    slopes = np.random.uniform(low=-5.0, high=5.0, size=num_bases)
+    intercepts = np.random.uniform(low=-5.0, high=5.0, size=num_bases)
+    global random_adv_basis
+    def random_adv_basis(x):
+        basis_vals = np.zeros((len(x), num_bases))
+        for i in range(num_bases-1):
+            basis_vals[:,i] = slopes[i] * x.flatten() + intercepts[i]
+        basis_vals[:, -1] = torch.pow(x.flatten(), 3.0)
+        return torch.tensor(basis_vals)
+    return random_adv_basis
 
 
 # # the below is attempting to create basis from vector

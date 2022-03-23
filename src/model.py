@@ -184,6 +184,8 @@ class NLM(nn.Module):
                 self.basis = create_legendre_basis(self.hyp["num_bases"])
             if self.hyp["basis"] == "RandomLinear":
                 self.basis = create_random_linear_basis(self.hyp["num_bases"])
+            if self.hyp["basis"] == "RandomLinear":
+                self.basis = create_adv_basis(self.hyp["num_bases"])
 
         self.model_id = None
 
