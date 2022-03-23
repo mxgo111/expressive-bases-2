@@ -149,7 +149,7 @@ class BayesianRegression(nn.Module):
         if add_noise:
             return add_output_noise(r, self.output_var)
         return r
-    
+
     # define MLL loss
     def marginal_log_likelihood(self,alpha, beta, x,y):
         """
@@ -170,14 +170,14 @@ class BayesianRegression(nn.Module):
         # alpha = self.hyp["w_prior_var"]
         # beta = self.hyp["output_var"]
 
-        # dimensionality of input datapoint 
+        # dimensionality of input datapoint
         D = x.shape[1]
         N = x.shape[0]
-        
-        # TODO: currently x is basis(x_train)
-        # can add if using a basis function then do a transformation first 
 
-        Theta = to_np(x) 
+        # TODO: currently x is basis(x_train)
+        # can add if using a basis function then do a transformation first
+
+        Theta = to_np(x)
 
         K = beta * np.dot(Theta.T, Theta)
         K += np.eye(Theta.shape[1]) * alpha
@@ -305,12 +305,10 @@ class NLM(nn.Module):
         print('Final Loss = {}'.format(min_loss))
 
         (self.basis, self.final_layer), self.min_loss = best_model, min_loss
-
-        self.model.infer_posterior(self.basis(x_train), y_train)
         
         negative_mll = self.model.negative_marginal_log_likelihood(self.hyp["w_prior_var"], self.hyp["output_var"], self.basis(x_train),y_train)
-  
-        # print('Negative marginal log likelhood =', negative_mll) # the smaller the better 
+
+        # print('Negative marginal log likelhood =', negative_mll) # the smaller the better
 
     def infer_posterior(self, x_train, y_train):
         self.model.infer_posterior(self.basis(x_train), y_train)
