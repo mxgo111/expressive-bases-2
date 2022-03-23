@@ -7,6 +7,9 @@ def cubic(x):
 def sine(x):
     return torch.sin(x)
 
+def xsinx(x):
+    return torch.multiply(x, torch.sin(x))
+
 def generate_data(hyp, random_seed=0, test=False):
     '''
     Generates data according to hyperparameters specified
@@ -30,6 +33,8 @@ def generate_data(hyp, random_seed=0, test=False):
             y = add_output_noise(cubic(x), var)
         elif hyp["dataset"] == "sine":
             y = add_output_noise(sine(x), var)
+        elif hyp["dataset"] == "xsinx":
+            y = add_output_noise(xsinx(x), var)
 
     else:
         # TODO: how do we wanna do test data?
