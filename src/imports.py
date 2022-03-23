@@ -18,6 +18,8 @@ import torch.optim as optim
 import torch.distributions as dists
 import random
 
+from numpy.polynomial import legendre
+
 import matplotlib; matplotlib.use('Agg')  # Allows to create charts with undefined $DISPLAY
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D

@@ -149,6 +149,65 @@ class BayesianRegression(nn.Module):
         if add_noise:
             return add_output_noise(r, self.output_var)
         return r
+    
+    # define MLL loss
+    def marginal_log_likelihood(self,alpha, beta, x,y):
+        """
+        Log likelihood of the data marginalised over the weights w. See chapter 3.5 of
+        the book by Bishop of an derivation.
+        Parameters
+        ---------
+        x, y: input datapoints and corresponding y values. x is of dimension N x D
+        alpha: variance prior on weights
+        beta: output variance on y
+
+        Returns
+        -------
+        float
+            lnlikelihood + prior
+        """
+
+        # alpha = self.hyp["w_prior_var"]
+        # beta = self.hyp["output_var"]
+
+        # dimensionality of input datapoint 
+        D = x.shape[1]
+        N = x.shape[0]
+        
+        # TODO: currently x is basis(x_train)
+        # can add if using a basis function then do a transformation first 
+
+        Theta = to_np(x) 
+
+        K = beta * np.dot(Theta.T, Theta)
+        K += np.eye(Theta.shape[1]) * alpha
+        try:
+            K_inv = np.linalg.inv(K)
+        except np.linalg.linalg.LinAlgError:
+                K_inv = np.linalg.inv(K + np.random.rand(K.shape[0], K.shape[1]) * 1e-8)
+
+        m = beta * np.dot(K_inv, Theta.T)
+        m = np.dot(m, y)
+
+        mll = D / 2 * np.log(alpha)
+        mll += N / 2 * np.log(beta)
+        mll -= N / 2 * np.log(2 * np.pi)
+        mll -= beta / 2. * np.linalg.norm(y - np.dot(Theta, m), 2)
+        mll -= alpha / 2. * np.dot(m.T, m)
+        mll -= 0.5 * np.log(np.linalg.det(K) + 1e-10)
+
+
+        return mll.squeeze()
+
+
+    def negative_marginal_log_likelihood(self,alpha, beta, x,y):
+        return - self.marginal_log_likelihood(alpha, beta, x,y)
+
+
+
+class GP():
+    # do stuff
+    pass
 
 
 class NLM(nn.Module):
@@ -157,24 +216,35 @@ class NLM(nn.Module):
 
         self.hyp = hyp
         self.model = BayesianRegression(hyp)
-        self.basis = FullyConnected(hyp, layers=hyp["layers"][:-1])
-        self.final_layer = FullyConnected(hyp, layers=hyp["layers"][-2:], is_final_layer=True)
+        if self.hyp["basis"] == "FullyConnected":
+            self.basis = FullyConnected(hyp, layers=hyp["layers"][:-1])
+            self.final_layer = FullyConnected(hyp, layers=hyp["layers"][-2:], is_final_layer=True)
+            self.trainable=True
 
-        # randomly initialize weights
-        self.w_prior_var = hyp["w_prior_var"]
-        self.basis.rand_init()
-        self.final_layer.rand_init()
+            # randomly initialize weights
+            self.w_prior_var = hyp["w_prior_var"]
+            self.basis.rand_init()
+            self.final_layer.rand_init()
 
-        # training parameters
-        self.loss_fn_name = hyp["loss"]
-        if self.loss_fn_name not in ["MLE", "MAP"]:
-            print("loss not defined")
+            # training parameters
+            self.loss_fn_name = hyp["loss"]
+            if self.loss_fn_name not in ["MLE", "MAP"]:
+                print("loss not defined")
 
-        self.lr = hyp["learning_rate"]
-        self.l2 = hyp["optimizer_weight_decay_l2"]
-        self.k = hyp["k"]
-        self.print_freq = hyp["train_print_freq"]
-        self.total_epochs = hyp["total_epochs"]
+            self.lr = hyp["learning_rate"]
+            self.l2 = hyp["optimizer_weight_decay_l2"]
+            self.k = hyp["k"]
+            self.print_freq = hyp["train_print_freq"]
+            self.total_epochs = hyp["total_epochs"]
+
+        else:
+            self.trainable=False
+            if self.hyp["basis"] == "Legendre":
+                self.basis = create_legendre_basis(self.hyp["num_bases"])
+            if self.hyp["basis"] == "RandomLinear":
+                self.basis = create_random_linear_basis(self.hyp["num_bases"])
+            if self.hyp["basis"] == "OneBasisIsData":
+                self.basis = create_adv_basis(self.hyp["num_bases"])
 
         self.model_id = None
 
@@ -182,7 +252,6 @@ class NLM(nn.Module):
         self.model_id = model_id
 
     def train(self, x_train, y_train, epochs):
-
         '''
         Optimizes 'loss_fn' with respect to 'params'
         'loss_fn' return a tuple of two:
@@ -190,6 +259,10 @@ class NLM(nn.Module):
 
         k is the regularization term, default 0
         '''
+
+        if not self.trainable:
+            raise NameError("Can't train - basis and finaly layer are not both fully connected")
+
         loss_fn_name = self.loss_fn_name
         params = list(self.basis.parameters()) + list(self.final_layer.parameters())
 
@@ -232,11 +305,19 @@ class NLM(nn.Module):
         print('Final Loss = {}'.format(min_loss))
 
         (self.basis, self.final_layer), self.min_loss = best_model, min_loss
+
+        self.model.infer_posterior(self.basis(x_train), y_train)
+        
+        negative_mll = self.model.negative_marginal_log_likelihood(self.hyp["w_prior_var"], self.hyp["output_var"], self.basis(x_train),y_train)
+  
+        # print('Negative marginal log likelhood =', negative_mll) # the smaller the better 
+
+    def infer_posterior(self, x_train, y_train):
         self.model.infer_posterior(self.basis(x_train), y_train)
 
-
     def visualize_posterior_predictive(self, x_train, y_train, savefig=None):
-        x_viz = ftens_cuda(np.linspace(self.hyp["dataset_min_range"], self.hyp["dataset_max_range"], self.hyp["num_points_linspace_visualize"])).unsqueeze(-1)
+        range = (self.hyp["dataset_max_range"] - self.hyp["dataset_min_range"]) // 4
+        x_viz = ftens_cuda(np.linspace(self.hyp["dataset_min_range"] - range, self.hyp["dataset_max_range"] + range, self.hyp["num_points_linspace_visualize"])).unsqueeze(-1)
         y_pred = self.model.sample_posterior_predictive(self.basis(x_viz), self.hyp["posterior_prior_predictive_samples"])
 
         # TODO: Clean up
@@ -335,7 +416,7 @@ class NLM(nn.Module):
         x_train_np = x_train.detach().cpu().numpy().squeeze()
         basis_train_np = self.basis(x_train).detach().cpu().numpy()
 
-        fig, axs = plt.subplots(num_final_layers//numcols + 1, numcols, figsize=(40, 15))
+        fig, axs = plt.subplots(max(num_final_layers//numcols, 2), numcols, figsize=(40, 15))
         for j in range(num_final_layers):
             i = argsorted_basis[j]
             row, col = j//numcols, j % numcols
