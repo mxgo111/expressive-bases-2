@@ -26,6 +26,18 @@ def to_np(v):
     return v.detach().numpy()
 
 
+def data_to_features(x):
+    '''
+    Concatenate features x with a column of 1s (for bias)
+    '''
+
+    ones = torch.ones(x.shape[0], 1)
+    if cuda_available():
+        ones = ones.cuda()
+
+    return torch.cat([x, ones], -1)
+
+
 def add_output_noise(r, output_var):
     '''
     Adds Gaussian noise to a tensor
@@ -62,12 +74,11 @@ def get_coverage_bounds(posterior_pred_samples, percentile):
     return lower_bounds, upper_bounds
 
 
-def get_uncertainty_in_gap(model, basis, x_train, y_train, n_points=1000, picp=95.0):
+def get_epistemic_gap(x_train, n_points):
     """
-    Estimates area in uncertainty region of the gap
+    Gets gap region
     """
     assert(len(x_train.shape) == 2 and x_train.shape[-1] == 1)
-    assert(len(y_train.shape) == 2 and y_train.shape[-1] == 1)
 
     # make sure x_train is sorted in ascending order
     x_train_sorted = np.sort(to_np(x_train.squeeze()))
@@ -76,8 +87,19 @@ def get_uncertainty_in_gap(model, basis, x_train, y_train, n_points=1000, picp=9
     # find gap
     N = len(x_train)
     gap = np.linspace(x_train_sorted.squeeze()[N//2-1], x_train_sorted.squeeze()[N//2], n_points)
-    h = gap[1] - gap[0]
     gap = ftens_cuda(gap).unsqueeze(-1)
+
+    return gap
+
+
+def get_uncertainty_in_gap(model, basis, x_train, y_train, n_points=1000, picp=95.0):
+    """
+    Estimates area in uncertainty region of the gap
+    """
+    assert(len(y_train.shape) == 2 and y_train.shape[-1] == 1)
+
+    gap = get_epistemic_gap(x_train, n_points)
+    h = np.asscalar((gap[1] - gap[0]).cpu().detach().numpy())
 
     # sample from inside gap
     y_pred = model.sample_posterior_predictive(basis(gap), n_points)
@@ -86,6 +108,19 @@ def get_uncertainty_in_gap(model, basis, x_train, y_train, n_points=1000, picp=9
     area = get_area(upper, lower, h)
 
     return area
+
+
+def var_of_posterior_predictive_var(model, basis, x_train, n_points=1000):
+    """
+    Estimates variance of variance of posterior predictive within the epistemic gap
+    """
+
+    gap = get_epistemic_gap(x_train, n_points)
+
+    X_star = data_to_features(basis(gap))
+    posterior_predictive_vars = torch.diagonal(torch.mm(X_star, torch.mm(model.posterior_cov, X_star.t())))
+
+    return posterior_predictive_vars.cpu().detach().numpy()
 
 
 def get_eff_dim(evals, z):

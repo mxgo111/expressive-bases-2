@@ -81,3 +81,33 @@ class GPConfig(BaseConfig):
         # experiment_name
         self.hyp["experiment_name"] = "GP"
         self.hyp["model"] = "GP"
+
+
+# VarofVar Configuration
+class VarofVar(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "VarofVar"
+        self.hyp["rand_init_seed"] = MultipleRuns([0, 1])
+        self.hyp["total_epochs"] = MultipleModels([1, 100, 1000])
+        self.hyp["train_dataset_size"] = 20
+        self.hyp["num_bases"] = 20
+        self.hyp["layers"] = [1, 40, self.hyp["num_bases"], 1]
+
+
+# Fourier Configuration
+class TestingFourier(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "Fourier"
+        self.hyp["basis"] = "Fourier"
+        self.hyp["dataset_min_range"] = -3
+        self.hyp["dataset_max_range"] = 3
+        self.hyp["train_dataset_size"] = 10
+        self.hyp["gap_min_range"] = -1
+        self.hyp["gap_max_range"] = 1
+        self.hyp["w_prior_var"] = 5.0
+        self.hyp["num_bases"] = 10
+        self.hyp["rand_init_seed"] = 0

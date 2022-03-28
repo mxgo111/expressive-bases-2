@@ -82,7 +82,8 @@ class BayesianRegression(nn.Module):
         self.output_var = hyp["output_var"]
 
         self.posterior = None
-        self.posterior_mean = None
+        self.posterior_mu = None
+        self.posterior_cov = None
 
     def data_to_features(self, x):
         """
@@ -138,7 +139,7 @@ class BayesianRegression(nn.Module):
         )
         self.posterior_mean = posterior_mean
 
-        return self.posterior, posterior_mean
+        return self.posterior
 
     def sample_posterior_predictive(self, x, num_samples, add_noise=True):
         # assert(self.posterior is not None)
@@ -259,6 +260,9 @@ class NLM(nn.Module):
 
         self.hyp = hyp
         self.model = BayesianRegression(hyp)
+        self.w_prior_var = hyp["w_prior_var"]
+        self.output_var = hyp["output_var"]
+
         if self.hyp["basis"] == "FullyConnected":
             self.basis = FullyConnected(hyp, layers=hyp["layers"][:-1])
             self.final_layer = FullyConnected(
@@ -267,7 +271,6 @@ class NLM(nn.Module):
             self.trainable = True
 
             # randomly initialize weights
-            self.w_prior_var = hyp["w_prior_var"]
             self.basis.rand_init()
             self.final_layer.rand_init()
 
@@ -290,6 +293,8 @@ class NLM(nn.Module):
                 self.basis = create_random_linear_basis(self.hyp["num_bases"])
             if self.hyp["basis"] == "OneBasisIsData":
                 self.basis = create_adv_basis(self.hyp["num_bases"])
+            if self.hyp["basis"] == "Fourier":
+                self.basis = create_fourier_basis(self.hyp["num_bases"])
 
         self.model_id = None
 
@@ -533,10 +538,10 @@ class NLM(nn.Module):
                 x_train_np, basis_train_np[:, i], c="red"
             )  # scatterplot training data
 
-            if self.model.posterior_mean == None:
-                w_posterior_mean = 0
+            if self.model.posterior_mu == None:
+                w_posterior_mu = 0
             else:
-                w_posterior_mean = self.model.posterior_mean.detach().cpu().numpy()[i]
+                w_posterior_mu = self.model.posterior_mu.detach().cpu().numpy()[i]
 
             axs[row, col].set_title(f"w_posterior_mean={np.round(w_posterior_mean, 3)}")
         plt.tight_layout()

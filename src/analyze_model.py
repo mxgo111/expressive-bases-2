@@ -94,6 +94,10 @@ def analyze_model(
     data["trained_epochs"].append(trained_epochs)
     data["eff_dim"].append(eff_dim)
     data["uncertainty_area"].append(uncertainty_area)
+    try:
+        data["var_of_var"].append(np.var(var_of_var))
+    except:
+        data["var_of_var"].append(None)
 
     # create model id and make folders
     model_id = get_unique_id()
@@ -112,6 +116,15 @@ def analyze_model(
         x_train, y_train, savefig=visualize_posterior_path
     )
     model.visualize_prior_predictive(x_train, y_train, savefig=visualize_prior_path)
+
+    # plot var of var to check
+    visualize_varofvar_path = models_path + model_id + "-varofvar"
+    try:
+        plt.plot(var_of_var)
+        plt.savefig(visualize_varofvar_path)
+        plt.close()
+    except:
+        pass
 
     # save data
     df = pd.DataFrame(data)
