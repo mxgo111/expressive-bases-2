@@ -262,7 +262,7 @@ class GP:
 
     def get_uncertainty_area(self, x_test):
         _, gp_sigma_squared = self.predict(x_test)
-        return np.mean(gp_sigma_squared), np.var(gp_sigma_squared)
+        return np.mean(np.sqrt(gp_sigma_squared)) * 3.92, np.var(gp_sigma_squared)
 
     def visualize_uncertainty(self, x_train, y_train, savefig=None):
 
