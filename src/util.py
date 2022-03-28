@@ -74,7 +74,7 @@ def get_coverage_bounds(posterior_pred_samples, percentile):
     return lower_bounds, upper_bounds
 
 
-def get_epistemic_gap(x_train, n_points):
+def get_epistemic_gap(x_train, n_points=1000):
     """
     Gets gap region
     """
