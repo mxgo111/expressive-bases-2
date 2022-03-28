@@ -46,6 +46,12 @@ def analyze_model(hyp, model, x_train, y_train, trained_epochs=None, model_init_
     # DO STUFF LIKE UNCERTAINTY GAP + EFFECTIVE DIMENSIONALITY HERE
     uncertainty_area = get_uncertainty_in_gap(model.model, model.basis, x_train, y_train, n_points=hyp["posterior_prior_predictive_samples"])
 
+    try:
+        var_of_var = var_of_posterior_predictive_var(model.model, model.basis, x_train, n_points=1000)
+    except:
+        var_of_var = None
+
+
     x_viz = np.linspace(hyp["dataset_min_range"], hyp["dataset_max_range"], hyp["num_points_linspace_visualize"])
     basis_vals = model.basis(torch.tensor(x_viz.reshape(-1, 1)))
     eff_dim = compute_eff_dim(basis_vals)
@@ -58,7 +64,8 @@ def analyze_model(hyp, model, x_train, y_train, trained_epochs=None, model_init_
         "trained_epochs",
         "model_id",
         "eff_dim",
-        "uncertainty_area"
+        "uncertainty_area",
+        "var_of_var"
     ]
 
     for col in cols:
@@ -81,6 +88,10 @@ def analyze_model(hyp, model, x_train, y_train, trained_epochs=None, model_init_
     data["trained_epochs"].append(trained_epochs)
     data["eff_dim"].append(eff_dim)
     data["uncertainty_area"].append(uncertainty_area)
+    try:
+        data["var_of_var"].append(np.var(var_of_var))
+    except:
+        data["var_of_var"].append(None)
 
     # create model id and make folders
     model_id = get_unique_id()
@@ -99,6 +110,15 @@ def analyze_model(hyp, model, x_train, y_train, trained_epochs=None, model_init_
     model.visualize_bases(x_train, y_train, savefig=visualize_bases_path)
     model.visualize_posterior_predictive(x_train, y_train, savefig=visualize_posterior_path)
     model.visualize_prior_predictive(x_train, y_train, savefig=visualize_prior_path)
+
+    # plot var of var to check
+    visualize_varofvar_path = models_path + model_id + "-varofvar"
+    try:
+        plt.plot(var_of_var)
+        plt.savefig(visualize_varofvar_path)
+        plt.close()
+    except:
+        pass
 
     # save data
     df = pd.DataFrame(data)

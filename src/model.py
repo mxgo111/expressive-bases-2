@@ -71,7 +71,8 @@ class BayesianRegression(nn.Module):
         self.output_var = hyp["output_var"]
 
         self.posterior = None
-        self.posterior_mean = None
+        self.posterior_mu = None
+        self.posterior_cov = None
 
     def data_to_features(self, x):
         '''
@@ -103,7 +104,7 @@ class BayesianRegression(nn.Module):
         posterior_cov = torch.pinverse(posterior_precision)
         posterior_mu = torch.mm(posterior_cov, torch.mm(X.t(), y)).squeeze() / self.output_var
 
-        return dists.MultivariateNormal(posterior_mu, precision_matrix=posterior_precision), posterior_mu
+        return dists.MultivariateNormal(posterior_mu, precision_matrix=posterior_precision), posterior_mu, posterior_cov
 
     def infer_posterior(self, x, y):
         '''
@@ -113,10 +114,9 @@ class BayesianRegression(nn.Module):
         phi = self.data_to_features(x)
         assert(len(phi.shape) == 2)
 
-        self.posterior, posterior_mean = self.bayesian_linear_regression_posterior_1d(phi, y)
-        self.posterior_mean = posterior_mean
+        self.posterior, self.posterior_mu, self.posterior_cov = self.bayesian_linear_regression_posterior_1d(phi, y)
 
-        return self.posterior, posterior_mean
+        return self.posterior
 
     def sample_posterior_predictive(self, x, num_samples, add_noise=True):
         # assert(self.posterior is not None)
@@ -216,13 +216,15 @@ class NLM(nn.Module):
 
         self.hyp = hyp
         self.model = BayesianRegression(hyp)
+        self.w_prior_var = hyp["w_prior_var"]
+        self.output_var = hyp["output_var"]
+
         if self.hyp["basis"] == "FullyConnected":
             self.basis = FullyConnected(hyp, layers=hyp["layers"][:-1])
             self.final_layer = FullyConnected(hyp, layers=hyp["layers"][-2:], is_final_layer=True)
             self.trainable=True
 
             # randomly initialize weights
-            self.w_prior_var = hyp["w_prior_var"]
             self.basis.rand_init()
             self.final_layer.rand_init()
 
@@ -245,6 +247,8 @@ class NLM(nn.Module):
                 self.basis = create_random_linear_basis(self.hyp["num_bases"])
             if self.hyp["basis"] == "OneBasisIsData":
                 self.basis = create_adv_basis(self.hyp["num_bases"])
+            if self.hyp["basis"] == "Fourier":
+                self.basis = create_fourier_basis(self.hyp["num_bases"])
 
         self.model_id = None
 
@@ -305,7 +309,7 @@ class NLM(nn.Module):
         print('Final Loss = {}'.format(min_loss))
 
         (self.basis, self.final_layer), self.min_loss = best_model, min_loss
-        
+
         negative_mll = self.model.negative_marginal_log_likelihood(self.hyp["w_prior_var"], self.hyp["output_var"], self.basis(x_train),y_train)
 
         # print('Negative marginal log likelhood =', negative_mll) # the smaller the better
@@ -414,19 +418,20 @@ class NLM(nn.Module):
         x_train_np = x_train.detach().cpu().numpy().squeeze()
         basis_train_np = self.basis(x_train).detach().cpu().numpy()
 
-        fig, axs = plt.subplots(max(num_final_layers//numcols, 2), numcols, figsize=(40, 15))
+        fig, axs = plt.subplots(max(num_final_layers//numcols + 1, 2), numcols, figsize=(40, 15))
+
         for j in range(num_final_layers):
             i = argsorted_basis[j]
             row, col = j//numcols, j % numcols
             axs[row,col].plot(x_vals, functions[i])
             axs[row,col].scatter(x_train_np, basis_train_np[:,i], c="red") # scatterplot training data
 
-            if self.model.posterior_mean == None:
-                w_posterior_mean = 0
+            if self.model.posterior_mu == None:
+                w_posterior_mu = 0
             else:
-                w_posterior_mean = self.model.posterior_mean.detach().cpu().numpy()[i]
+                w_posterior_mu = self.model.posterior_mu.detach().cpu().numpy()[i]
 
-            axs[row,col].set_title(f"w_posterior_mean={np.round(w_posterior_mean, 3)}")
+            axs[row,col].set_title(f"w_posterior_mu={np.round(w_posterior_mu, 3)}")
         plt.tight_layout()
 
         if savefig != None:
