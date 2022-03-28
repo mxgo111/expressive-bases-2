@@ -1,5 +1,6 @@
 from util import *
 
+
 def analyze_model(
     hyp, model, x_train, y_train, trained_epochs=None, model_init_id=None
 ):
@@ -49,9 +50,11 @@ def analyze_model(
         y_train,
         n_points=hyp["posterior_prior_predictive_samples"],
     )
-
+    posterior_contraction = model.model.posterior_contraction()
     try:
-        uncertainty_area_var = var_of_posterior_predictive_var(model.model, model.basis, x_train, n_points=1000)
+        uncertainty_area_var = var_of_posterior_predictive_var(
+            model.model, model.basis, x_train, n_points=1000
+        )
     except:
         uncertainty_area_var = None
 
@@ -72,7 +75,8 @@ def analyze_model(
         "model_id",
         "eff_dim",
         "uncertainty_area",
-        "uncertainty_area_var"
+        "uncertainty_area_var",
+        "posterior_contraction",
     ]
 
     for col in cols:
@@ -95,6 +99,7 @@ def analyze_model(
     data["trained_epochs"].append(trained_epochs)
     data["eff_dim"].append(eff_dim)
     data["uncertainty_area"].append(uncertainty_area)
+    data["posterior_contraction"].append(posterior_contraction)
     try:
         data["uncertainty_area_var"].append(np.var(uncertainty_area_var))
     except:

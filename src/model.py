@@ -124,7 +124,7 @@ class BayesianRegression(nn.Module):
                 posterior_mu, precision_matrix=posterior_precision
             ),
             posterior_mu,
-            posterior_cov
+            posterior_cov,
         )
 
     def infer_posterior(self, x, y):
@@ -135,9 +135,11 @@ class BayesianRegression(nn.Module):
         phi = self.data_to_features(x)
         assert len(phi.shape) == 2
 
-        self.posterior, self.posterior_mean, self.posterior_cov = self.bayesian_linear_regression_posterior_1d(
-            phi, y
-        )
+        (
+            self.posterior,
+            self.posterior_mean,
+            self.posterior_cov,
+        ) = self.bayesian_linear_regression_posterior_1d(phi, y)
 
         return self.posterior
 
@@ -226,6 +228,9 @@ class BayesianRegression(nn.Module):
     def negative_marginal_log_likelihood(self, alpha, beta, x, y):
         return -self.marginal_log_likelihood(alpha, beta, x, y)
 
+    def posterior_contraction(self):
+        return torch.sum(1 - torch.diag(self.posterior_cov))
+
 
 class GP:
     # do stuff
@@ -268,7 +273,9 @@ class GP:
 
         ax.plot(x_test, gp_pred, color="blue", lw=3, label="Predictive Mean")
 
-        for (z, cint), alpha in zip([(0.674, 50.0), (1.0, 68.0), (1.96, 95.0)], [0.4, 0.3, 0.2]):
+        for (z, cint), alpha in zip(
+            [(0.674, 50.0), (1.0, 68.0), (1.96, 95.0)], [0.4, 0.3, 0.2]
+        ):
             plt.fill_between(
                 x_test,
                 gp_pred - z * np.sqrt(gp_sigma),
