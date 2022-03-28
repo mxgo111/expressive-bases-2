@@ -27,9 +27,9 @@ def to_np(v):
 
 
 def data_to_features(x):
-    '''
+    """
     Concatenate features x with a column of 1s (for bias)
-    '''
+    """
 
     ones = torch.ones(x.shape[0], 1)
     if cuda_available():
@@ -39,11 +39,11 @@ def data_to_features(x):
 
 
 def add_output_noise(r, output_var):
-    '''
+    """
     Adds Gaussian noise to a tensor
-    '''
+    """
     eps = torch.nn.init.normal_(torch.zeros_like(r), std=math.sqrt(output_var))
-    assert(eps.size() == r.size())
+    assert eps.size() == r.size()
     return r + eps
 
 
@@ -60,10 +60,10 @@ def get_area(upper, lower, h):
 
 
 def get_coverage_bounds(posterior_pred_samples, percentile):
-    '''
+    """
     Assumes N x samples
-    '''
-    assert(not (percentile < 0. or percentile > 100.))
+    """
+    assert not (percentile < 0.0 or percentile > 100.0)
 
     lower_percentile = (100.0 - percentile) / 2.0
     upper_percentile = 100.0 - lower_percentile
@@ -74,19 +74,21 @@ def get_coverage_bounds(posterior_pred_samples, percentile):
     return lower_bounds, upper_bounds
 
 
-def get_epistemic_gap(x_train, n_points):
+def get_epistemic_gap(x_train, n_points=1000):
     """
     Gets gap region
     """
-    assert(len(x_train.shape) == 2 and x_train.shape[-1] == 1)
+    assert len(x_train.shape) == 2 and x_train.shape[-1] == 1
 
     # make sure x_train is sorted in ascending order
     x_train_sorted = np.sort(to_np(x_train.squeeze()))
-    assert(np.all(x_train_sorted[:-1] <= x_train_sorted[1:]))
+    assert np.all(x_train_sorted[:-1] <= x_train_sorted[1:])
 
     # find gap
     N = len(x_train)
-    gap = np.linspace(x_train_sorted.squeeze()[N//2-1], x_train_sorted.squeeze()[N//2], n_points)
+    gap = np.linspace(
+        x_train_sorted.squeeze()[N // 2 - 1], x_train_sorted.squeeze()[N // 2], n_points
+    )
     gap = ftens_cuda(gap).unsqueeze(-1)
 
     return gap
@@ -96,7 +98,7 @@ def get_uncertainty_in_gap(model, basis, x_train, y_train, n_points=1000, picp=9
     """
     Estimates area in uncertainty region of the gap
     """
-    assert(len(y_train.shape) == 2 and y_train.shape[-1] == 1)
+    assert len(y_train.shape) == 2 and y_train.shape[-1] == 1
 
     gap = get_epistemic_gap(x_train, n_points)
     h = np.asscalar((gap[1] - gap[0]).cpu().detach().numpy())
@@ -118,7 +120,9 @@ def var_of_posterior_predictive_var(model, basis, x_train, n_points=1000):
     gap = get_epistemic_gap(x_train, n_points)
 
     X_star = data_to_features(basis(gap))
-    posterior_predictive_vars = torch.diagonal(torch.mm(X_star, torch.mm(model.posterior_cov, X_star.t())))
+    posterior_predictive_vars = torch.diagonal(
+        torch.mm(X_star, torch.mm(model.posterior_cov, X_star.t()))
+    )
 
     return posterior_predictive_vars.cpu().detach().numpy()
 
@@ -128,7 +132,7 @@ def get_eff_dim(evals, z):
     Computes effective dimensionality of matrix
     """
     assert z > 0
-    return np.sum(np.divide(evals, evals+z))
+    return np.sum(np.divide(evals, evals + z))
 
 
 def compute_eff_dim(basis_vals, z=1, visual=False):
@@ -143,18 +147,16 @@ def compute_eff_dim(basis_vals, z=1, visual=False):
     corr = basis_vals_df.corr()
 
     # drop irrelevant rows/columns
-    corr.dropna(axis=0, how='all', inplace=True)
-    corr.dropna(axis=1, how='all', inplace=True)
+    corr.dropna(axis=0, how="all", inplace=True)
+    corr.dropna(axis=1, how="all", inplace=True)
 
     # eigenvals
     evals, evecs = np.linalg.eig(corr)
 
     if visual:
-        plt.figure(figsize=(10,10))
+        plt.figure(figsize=(10, 10))
         # plot the heatmap
-        sns.heatmap(corr,
-                xticklabels=corr.columns,
-                yticklabels=corr.columns)
+        sns.heatmap(corr, xticklabels=corr.columns, yticklabels=corr.columns)
 
         # Scree plot
         plt.figure(figsize=(10, 5))

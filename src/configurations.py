@@ -46,8 +46,8 @@ class BaseConfig:
         self.hyp[
             "model"
         ] = "BayesianRegression"  # if GP, ignore almost every other parameter
-        self.hyp["length_scale"] = 1 # for GP
-        self.hyp["rbf_multiplier"] = 0.1 # for GP
+        self.hyp["length_scale"] = 1  # for GP
+        self.hyp["rbf_multiplier"] = 0.1  # for GP
         self.hyp["activation"] = "ReLU"
         self.hyp["num_bases"] = 20
         self.hyp["layers"] = [1, 50, self.hyp["num_bases"], 1]
@@ -80,6 +80,8 @@ class GPConfig(BaseConfig):
         # experiment_name
         self.hyp["experiment_name"] = "GP"
         self.hyp["model"] = "GP"
+        self.hyp["visualize_min_range"] = -1
+        self.hyp["visualize_max_range"] = 1
 
 
 # VarofVar Configuration
@@ -110,6 +112,7 @@ class TestingFourier(BaseConfig):
         self.hyp["w_prior_var"] = 5.0
         self.hyp["num_bases"] = 10
         self.hyp["rand_init_seed"] = 0
+
 
 # testing GPs
 class TestingGP(BaseConfig):
@@ -201,14 +204,16 @@ class GeneralComparison(BaseConfig):
         # model parameters
         self.hyp["basis"] = "FullyConnected"  # or Custom, Legendre, Sine+Cosine
         self.hyp["final_layer"] = "FullyConnected"
-        self.hyp[
-            "model"
-        ] = "GP"  # if GP, ignore almost every other parameter
+        self.hyp["model"] = "GP"  # if GP, ignore almost every other parameter
         self.hyp["length_scale"] = 1
         self.hyp["rbf_multiplier"] = MultipleRuns([0.1])
         # self.hyp["activation"] = MultipleRuns(["Tanh", "LeakyReLU"])
         # self.hyp["num_bases"] = MultipleRuns([40, 80, 120])
-        self.hyp["layers"] = [1, 5, 1] # second to last will be replaced by num_bases in the FullyConnected case
+        self.hyp["layers"] = [
+            1,
+            5,
+            1,
+        ]  # second to last will be replaced by num_bases in the FullyConnected case
         self.hyp["output_activation"] = True
         self.hyp["bias"] = True
         self.hyp["rand_init_mean"] = 0.0

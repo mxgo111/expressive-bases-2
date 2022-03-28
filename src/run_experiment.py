@@ -121,3 +121,4 @@ if __name__ == "__main__":
     # testing multiple runs
     run_multiple_models(GeneralComparison())
     # run_multiple_models(TestingFourier())
+    run_single_model(GPConfig().hyp)
