@@ -16,6 +16,12 @@ class FullyConnected(nn.Module):
 
         assert layers != None
         self.layers = layers
+
+        if is_final_layer:
+            self.layers[0] = hyp["num_bases"]
+        else:
+            self.layers[-1] = hyp["num_bases"]
+
         self.output_activation = hyp["output_activation"]
         self.activation_module = getattr(nn, hyp["activation"])
         self.bias = hyp["bias"]
@@ -236,9 +242,9 @@ class GP:
     # do stuff
     def __init__(self, hyp):
         self.hyp = hyp
-        self.kernel = 0.1 * RBF(
-            length_scale=1, length_scale_bounds=(1e-5, 0.8)
-        ) + WhiteKernel(0.1, noise_level_bounds=(1e-2, 1))
+        self.kernel = hyp["rbf_multiplier"] * RBF(
+            length_scale=hyp["length_scale"], length_scale_bounds=(1e-5, 8)  # 0.8
+        ) + WhiteKernel(hyp["output_var"], noise_level_bounds=(1e-2, 1))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.model = GaussianProcessRegressor(
@@ -255,8 +261,8 @@ class GP:
         return gp_pred, gp_sigma**2
 
     def get_uncertainty_area(self, x_test):
-        _, gp_sigma = self.predict(x_test)
-        return np.mean(gp_sigma), np.var(gp_sigma)
+        _, gp_sigma_squared = self.predict(x_test)
+        return np.mean(gp_sigma), np.var(gp_sigma_squared)
 
     def visualize_uncertainty(self, x_train, y_train, savefig=None):
 
@@ -344,6 +350,8 @@ class NLM(nn.Module):
                 self.basis = create_adv_basis(self.hyp["num_bases"])
             if self.hyp["basis"] == "Fourier":
                 self.basis = create_fourier_basis(self.hyp["num_bases"])
+            if self.hyp["basis"] == "OneBasisIsDataFourier":
+                self.basis = create_fourier_basis_one_match(self.hyp["num_bases"])
 
         self.model_id = None
 
@@ -576,7 +584,7 @@ class NLM(nn.Module):
         basis_train_np = self.basis(x_train).detach().cpu().numpy()
 
         fig, axs = plt.subplots(
-            max(num_final_layers // numcols, 2), numcols, figsize=(40, 15)
+            max(num_final_layers // numcols + 1, 2), numcols, figsize=(40, 15)
         )
         for j in range(num_final_layers):
             i = argsorted_basis[j]
