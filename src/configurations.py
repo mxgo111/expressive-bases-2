@@ -46,6 +46,8 @@ class BaseConfig:
         self.hyp[
             "model"
         ] = "BayesianRegression"  # if GP, ignore almost every other parameter
+        self.hyp["length_scale"] = 1 # for GP
+        self.hyp["rbf_multiplier"] = 0.1 # for GP
         self.hyp["activation"] = "ReLU"
         self.hyp["num_bases"] = 20
         self.hyp["layers"] = [1, 50, self.hyp["num_bases"], 1]
@@ -148,14 +150,65 @@ class ComparingGP(BaseConfig):
         self.hyp["output_var"] = 0.01
 
         # model parameters
+        self.hyp["basis"] = "OneBasisIsDataFourier"  # or Custom, Legendre, Sine+Cosine
+        self.hyp["final_layer"] = "FullyConnected"
+        self.hyp[
+            "model"
+        ] = "BayesianRegression"  # if GP, ignore almost every other parameter
+        self.hyp["activation"] = "LeakyReLU"
+        self.hyp["num_bases"] = MultipleRuns([1, 5, 10, 100, 200, 300])
+        self.hyp["layers"] = [1, 50, self.hyp["num_bases"], 1]
+        self.hyp["output_activation"] = True
+        self.hyp["bias"] = True
+        self.hyp["rand_init_mean"] = 0.0
+        self.hyp["rand_init_std"] = 1.0
+        self.hyp["rand_init_seed"] = 0
+        self.hyp["w_prior_var"] = 1.0
+        self.hyp["loss"] = "MLE"
+        self.hyp["k"] = 0.1  # relevant if using MAP Loss
+        self.hyp["learning_rate"] = 1e-3
+        self.hyp["optimizer_weight_decay_l2"] = 0.0
+        self.hyp["total_epochs"] = 5000
+
+        # sampling and other parameters
+        self.hyp["train_print_freq"] = 1000
+        self.hyp["posterior_prior_predictive_samples"] = 3000
+        self.hyp["add_output_noise_prior_predictive_sampling"] = True
+        self.hyp["add_output_noise_posterior_predictive_sampling"] = True
+        self.hyp["num_points_linspace_visualize"] = 500
+
+
+class GeneralComparison(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp = {}
+
+        # experiment parameters
+        self.hyp["experiment_name"] = "GeneralComparison"
+
+        # dataset parameters
+        self.hyp["dataset"] = "cubic"
+        self.hyp["dataset_min_range"] = -1
+        self.hyp["dataset_max_range"] = 1
+        self.hyp["gap_min_range"] = -0.5
+        self.hyp["gap_max_range"] = 0.5
+        self.hyp["visualize_min_range"] = -1.5
+        self.hyp["visualize_max_range"] = 1.5
+        self.hyp["train_dataset_size"] = 100
+        self.hyp["output_var"] = 0.01
+
+        # model parameters
         self.hyp["basis"] = "FullyConnected"  # or Custom, Legendre, Sine+Cosine
         self.hyp["final_layer"] = "FullyConnected"
         self.hyp[
             "model"
         ] = "GP"  # if GP, ignore almost every other parameter
-        self.hyp["activation"] = "Tanh"
-        self.hyp["num_bases"] = 20
-        self.hyp["layers"] = [1, 50, self.hyp["num_bases"], 1]
+        self.hyp["length_scale"] = 1
+        self.hyp["rbf_multiplier"] = MultipleRuns([0.1])
+        # self.hyp["activation"] = MultipleRuns(["Tanh", "LeakyReLU"])
+        # self.hyp["num_bases"] = MultipleRuns([40, 80, 120])
+        self.hyp["layers"] = [1, 5, 1] # second to last will be replaced by num_bases in the FullyConnected case
         self.hyp["output_activation"] = True
         self.hyp["bias"] = True
         self.hyp["rand_init_mean"] = 0.0

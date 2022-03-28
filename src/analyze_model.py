@@ -112,6 +112,8 @@ def analyze_model(
     model.set_id(model_id)
 
     # POTENTIALLY DO STUFF LIKE VISUALIZATIONS AND SAVING TO FILES HERE
+    # print(hyp["num_bases"])
+    # print(model.model.posterior_mu.detach().cpu().numpy()[-2])
     model.visualize_bases(x_train, y_train, savefig=visualize_bases_path)
     model.visualize_posterior_predictive(
         x_train, y_train, savefig=visualize_posterior_path
@@ -211,6 +213,8 @@ def analyze_gp_model(
         hyp["dataset_max_range"],
         hyp["num_points_linspace_visualize"],
     )
+
+    gap = get_epistemic_gap
 
     uncertainty_mean, uncertainty_var = model.get_uncertainty_area(x_viz)
     data["uncertainty_area"].append(uncertainty_mean)
