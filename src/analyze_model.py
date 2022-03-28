@@ -219,9 +219,9 @@ def analyze_gp_model(
         hyp["num_points_linspace_visualize"],
     )
 
-    gap = get_epistemic_gap
+    x_gap = np.array(get_epistemic_gap(x_train))
 
-    uncertainty_mean, uncertainty_var = model.get_uncertainty_area(x_viz)
+    uncertainty_mean, uncertainty_var = model.get_uncertainty_area(x_gap)
     data["uncertainty_area"].append(uncertainty_mean)
     data["uncertainty_area_var"].append(uncertainty_var)
     data["model_init_id"].append(model_init_id)
