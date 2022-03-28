@@ -216,6 +216,10 @@ def analyze_gp_model(
     data["uncertainty_area_var"].append(uncertainty_var)
     data["model_init_id"].append(model_init_id)
     data["model_id"].append(model_init_id)
+
+    visualize_gp_path = models_path + model_init_id + "-gp"
+    model.visualize_uncertainty(x_viz, savefig=visualize_gp_path)
+
     print(data)
     df = pd.DataFrame(data)
     df.to_pickle(data_path, protocol=4)

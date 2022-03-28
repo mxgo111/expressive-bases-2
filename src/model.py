@@ -253,6 +253,40 @@ class GP:
         _, gp_sigma = self.predict(x_test)
         return np.mean(gp_sigma), np.var(gp_sigma)
 
+    def visualize_uncertainty(self, x_test, savefig=None):
+
+        fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+        gp_pred, gp_sigma = self.predict(x_test)
+        gp_pred = gp_pred.reshape(-1)
+        gp_sigma = gp_sigma.reshape(-1)
+
+        ax.plot(x_test, gp_pred)
+
+        for z, cint in [(1.645, 68), (1.96, 95), (2.575, 99)]:
+            plt.fill_between(
+                np.concatenate([x_test, x_test[::-1]]),
+                np.concatenate(
+                    [
+                        gp_pred - z * np.sqrt(gp_sigma),
+                        (gp_pred + z * np.sqrt(gp_sigma))[::-1],
+                    ]
+                ),
+                alpha=0.1,
+                fc="b",
+                label=f"{cint}% confidence interval",
+            )
+
+        leg = plt.legend()
+        a = 0.8
+        for lh in leg.legendHandles:
+            a -= 0.2
+        lh.set_alpha(a)
+
+        if savefig != None:
+            plt.savefig(savefig)
+
+        plt.close()
+
 
 class NLM(nn.Module):
     def __init__(self, hyp):

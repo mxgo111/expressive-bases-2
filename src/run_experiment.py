@@ -120,4 +120,4 @@ def run_single_model(hyp):
 if __name__ == "__main__":
     # testing multiple runs
     run_single_model(GPConfig().hyp)
-    run_multiple_models(TestingFourier())
+    # run_multiple_models(TestingFourier())
