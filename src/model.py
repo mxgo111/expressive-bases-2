@@ -235,7 +235,7 @@ class BayesianRegression(nn.Module):
         return -self.marginal_log_likelihood(alpha, beta, x, y)
 
     def posterior_contraction(self):
-        return torch.sum(1 - torch.diag(self.posterior_cov))
+        return torch.sum(1 - torch.diag(self.posterior_cov)).detach().numpy()
 
 
 class GP:

@@ -204,11 +204,13 @@ class GeneralComparison(BaseConfig):
         # model parameters
         self.hyp["basis"] = "FullyConnected"  # or Custom, Legendre, Sine+Cosine
         self.hyp["final_layer"] = "FullyConnected"
-        self.hyp["model"] = "GP"  # if GP, ignore almost every other parameter
+        self.hyp["model"] = MultipleRuns(
+            ["GP", "BayesianRegression"]
+        )  # if GP, ignore almost every other parameter
         self.hyp["length_scale"] = 1
         self.hyp["rbf_multiplier"] = MultipleRuns([0.1])
-        # self.hyp["activation"] = MultipleRuns(["Tanh", "LeakyReLU"])
-        # self.hyp["num_bases"] = MultipleRuns([40, 80, 120])
+        self.hyp["activation"] = MultipleRuns(["Tanh", "LeakyReLU"])
+        self.hyp["num_bases"] = 20
         self.hyp["layers"] = [
             1,
             5,
