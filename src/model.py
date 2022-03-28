@@ -124,6 +124,7 @@ class BayesianRegression(nn.Module):
                 posterior_mu, precision_matrix=posterior_precision
             ),
             posterior_mu,
+            posterior_cov
         )
 
     def infer_posterior(self, x, y):
@@ -134,10 +135,9 @@ class BayesianRegression(nn.Module):
         phi = self.data_to_features(x)
         assert len(phi.shape) == 2
 
-        self.posterior, posterior_mean = self.bayesian_linear_regression_posterior_1d(
+        self.posterior, self.posterior_mean, self.posterior_cov = self.bayesian_linear_regression_posterior_1d(
             phi, y
         )
-        self.posterior_mean = posterior_mean
 
         return self.posterior
 
@@ -253,34 +253,42 @@ class GP:
         _, gp_sigma = self.predict(x_test)
         return np.mean(gp_sigma), np.var(gp_sigma)
 
-    def visualize_uncertainty(self, x_test, savefig=None):
+    def visualize_uncertainty(self, x_train, y_train, savefig=None):
+
+        x_test = np.linspace(
+            self.hyp["visualize_min_range"],
+            self.hyp["visualize_max_range"],
+            self.hyp["num_points_linspace_visualize"],
+        )
 
         fig, ax = plt.subplots(1, 1, figsize=(6, 6))
         gp_pred, gp_sigma = self.predict(x_test)
         gp_pred = gp_pred.reshape(-1)
         gp_sigma = gp_sigma.reshape(-1)
 
-        ax.plot(x_test, gp_pred)
+        ax.plot(x_test, gp_pred, color="blue", lw=3, label="Predictive Mean")
 
-        for z, cint in [(1.645, 68), (1.96, 95), (2.575, 99)]:
+        for (z, cint), alpha in zip([(0.674, 50.0), (1.0, 68.0), (1.96, 95.0)], [0.4, 0.3, 0.2]):
             plt.fill_between(
-                np.concatenate([x_test, x_test[::-1]]),
-                np.concatenate(
-                    [
-                        gp_pred - z * np.sqrt(gp_sigma),
-                        (gp_pred + z * np.sqrt(gp_sigma))[::-1],
-                    ]
-                ),
-                alpha=0.1,
-                fc="b",
-                label=f"{cint}% confidence interval",
+                x_test,
+                gp_pred - z * np.sqrt(gp_sigma),
+                gp_pred + z * np.sqrt(gp_sigma),
+                alpha=alpha,
+                # fc="b",
+                # label=f"{cint}% confidence interval",
+                label="{}%-PICP".format(cint),
+                color="steelblue",
             )
 
-        leg = plt.legend()
-        a = 0.8
-        for lh in leg.legendHandles:
-            a -= 0.2
-        lh.set_alpha(a)
+        # plot training data
+        ax.scatter(
+            x_train, y_train, color="red", s=10.0, zorder=10, label="Training Data"
+        )
+
+        ax.set_xlabel("$x$")
+        ax.set_ylabel("$y$")
+        ax.set_title("Prior Predictive")
+        ax.legend()
 
         if savefig != None:
             plt.savefig(savefig)
@@ -426,11 +434,10 @@ class NLM(nn.Module):
         self.model.infer_posterior(self.basis(x_train), y_train)
 
     def visualize_posterior_predictive(self, x_train, y_train, savefig=None):
-        range = (self.hyp["dataset_max_range"] - self.hyp["dataset_min_range"]) // 4
         x_viz = ftens_cuda(
             np.linspace(
-                self.hyp["dataset_min_range"] - range,
-                self.hyp["dataset_max_range"] + range,
+                self.hyp["visualize_min_range"],
+                self.hyp["visualize_max_range"],
                 self.hyp["num_points_linspace_visualize"],
             )
         ).unsqueeze(-1)
@@ -485,8 +492,8 @@ class NLM(nn.Module):
     def visualize_prior_predictive(self, x_train, y_train, savefig=None):
         x_viz = ftens_cuda(
             np.linspace(
-                self.hyp["dataset_min_range"],
-                self.hyp["dataset_max_range"],
+                self.hyp["visualize_min_range"],
+                self.hyp["visualize_max_range"],
                 self.hyp["num_points_linspace_visualize"],
             )
         ).unsqueeze(-1)
@@ -540,8 +547,8 @@ class NLM(nn.Module):
 
     def visualize_bases(self, x_train, y_train, numcols=12, savefig=None):
         x_vals = np.linspace(
-            self.hyp["dataset_min_range"],
-            self.hyp["dataset_max_range"],
+            self.hyp["visualize_min_range"],
+            self.hyp["visualize_max_range"],
             self.hyp["num_points_linspace_visualize"],
         )
         basis_vals = self.basis(torch.tensor(x_vals.reshape(-1, 1)))
@@ -577,7 +584,7 @@ class NLM(nn.Module):
             else:
                 w_posterior_mu = self.model.posterior_mu.detach().cpu().numpy()[i]
 
-            axs[row, col].set_title(f"w_posterior_mean={np.round(w_posterior_mean, 3)}")
+            axs[row, col].set_title(f"w_posterior_mean={np.round(w_posterior_mu, 3)}")
         plt.tight_layout()
 
         if savefig != None:

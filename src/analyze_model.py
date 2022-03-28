@@ -1,10 +1,5 @@
 from util import *
 
-
-def analyze_gp():
-    pass
-
-
 def analyze_model(
     hyp, model, x_train, y_train, trained_epochs=None, model_init_id=None
 ):
@@ -55,6 +50,11 @@ def analyze_model(
         n_points=hyp["posterior_prior_predictive_samples"],
     )
 
+    try:
+        uncertainty_area_var = var_of_posterior_predictive_var(model.model, model.basis, x_train, n_points=1000)
+    except:
+        uncertainty_area_var = None
+
     x_viz = np.linspace(
         hyp["dataset_min_range"],
         hyp["dataset_max_range"],
@@ -72,6 +72,7 @@ def analyze_model(
         "model_id",
         "eff_dim",
         "uncertainty_area",
+        "uncertainty_area_var"
     ]
 
     for col in cols:
@@ -95,9 +96,9 @@ def analyze_model(
     data["eff_dim"].append(eff_dim)
     data["uncertainty_area"].append(uncertainty_area)
     try:
-        data["var_of_var"].append(np.var(var_of_var))
+        data["uncertainty_area_var"].append(np.var(uncertainty_area_var))
     except:
-        data["var_of_var"].append(None)
+        data["uncertainty_area_var"].append(None)
 
     # create model id and make folders
     model_id = get_unique_id()
@@ -120,7 +121,7 @@ def analyze_model(
     # plot var of var to check
     visualize_varofvar_path = models_path + model_id + "-varofvar"
     try:
-        plt.plot(var_of_var)
+        plt.plot(uncertainty_area_var)
         plt.savefig(visualize_varofvar_path)
         plt.close()
     except:
@@ -218,8 +219,8 @@ def analyze_gp_model(
     data["model_id"].append(model_init_id)
 
     visualize_gp_path = models_path + model_init_id + "-gp"
-    model.visualize_uncertainty(x_viz, savefig=visualize_gp_path)
+    model.visualize_uncertainty(x_train, y_train, savefig=visualize_gp_path)
 
-    print(data)
+    # print(data)
     df = pd.DataFrame(data)
     df.to_pickle(data_path, protocol=4)
