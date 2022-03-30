@@ -43,7 +43,7 @@ class BaseConfig:
         self.hyp["output_var"] = 0.01
 
         # model parameters
-        self.hyp["basis"] = "FullyConnected"  # or Custom, Legendre, Sine+Cosine
+        self.hyp["basis"] = "FullyConnected"  # or Custom, Legendre, Fourier
         self.hyp["final_layer"] = "FullyConnected"
         self.hyp[
             "model"
@@ -52,7 +52,7 @@ class BaseConfig:
         self.hyp["rbf_multiplier"] = 0.1  # for GP
         self.hyp["activation"] = "ReLU"
         self.hyp["num_bases"] = 20
-        self.hyp["layers"] = [1, 50, self.hyp["num_bases"], 1]
+        self.hyp["layers"] = [1, 50, 1]
         self.hyp["output_activation"] = True
         self.hyp["bias"] = True
         self.hyp["rand_init_mean"] = 0.0
@@ -72,14 +72,54 @@ class BaseConfig:
         self.hyp["add_output_noise_posterior_predictive_sampling"] = True
         self.hyp["num_points_linspace_visualize"] = 500
 
-class VaryingBases(BaseConfig):
+
+class VaryingBasesNLM(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "VaryingBases"
+        self.hyp["model"] = "BayesianRegression"
+        self.hyp["basis"] = "FullyConnected"
+        self.hyp["activation"] = MultipleRuns(["LeakyReLU", "ReLU", "Tanh"])
+        self.hyp["num_bases"] = MultipleRuns([5, 10, 20, 40, 80])
+        self.hyp["rand_init_seed"] = MultipleRuns([0, 1, 2, 3, 4])
+        self.hyp["layers"] = [1, 50, 1]
+
+class VaryingBasesGP(BaseConfig):
     def __init__(self):
         super().__init__()
         # experiment_name
         self.hyp["experiment_name"] = "VaryingBases"
         self.hyp["model"] = "GP"
-        
 
+class VaryingBasesFourier(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "VaryingBases"
+        self.hyp["model"] = "BayesianRegression"
+        self.hyp["basis"] = "Fourier"
+        self.hyp["num_bases"] = MultipleRuns([5, 10, 20, 40, 80])
+        self.hyp["rand_init_seed"] = MultipleRuns([1, 2, 3, 4])
+
+class VaryingBasesFourierScale(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "VaryingBasesScale"
+        self.hyp["model"] = "BayesianRegression"
+        self.hyp["basis"] = "Fourier"
+        self.hyp["num_bases"] = MultipleRuns([5, 10, 20, 40, 80])
+        self.hyp["rand_init_seed"] = 5
+
+class VaryingBasesOther(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "VaryingBases"
+        self.hyp["model"] = "BayesianRegression"
+        self.hyp["basis"] = MultipleRuns(["Legendre", "Fourier", "RandomLinear"])
+        self.hyp["num_bases"] = MultipleRuns([5, 10, 20, 40, 80])
 
 
 

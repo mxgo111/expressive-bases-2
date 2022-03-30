@@ -17,6 +17,7 @@ class FullyConnected(nn.Module):
         assert layers != None
         self.layers = layers
 
+        # change layers so that it matches hyp["num_bases"]
         if is_final_layer:
             self.layers[0] = hyp["num_bases"]
         else:
@@ -143,7 +144,7 @@ class BayesianRegression(nn.Module):
 
         (
             self.posterior,
-            self.posterior_mean,
+            self.posterior_mu,
             self.posterior_cov,
         ) = self.bayesian_linear_regression_posterior_1d(phi, y)
 
@@ -300,7 +301,7 @@ class GP:
 
         ax.set_xlabel("$x$")
         ax.set_ylabel("$y$")
-        ax.set_title("Prior Predictive")
+        ax.set_title("Posterior Predictive")
         ax.legend()
 
         if savefig != None:
