@@ -57,9 +57,7 @@ class BaseConfig:
         self.hyp["bias"] = True
         self.hyp["rand_init_mean"] = 0.0
         self.hyp["rand_init_std"] = 1.0
-        self.hyp["rand_init_seed"] = MultipleRuns(
-            [0, 1]
-        )  # goto for multiple runs of the same parameters
+        self.hyp["rand_init_seed"] = 0  # goto for multiple runs of the same parameters
         self.hyp["w_prior_var"] = 1.0
         self.hyp["loss"] = "MLE"
         self.hyp["k"] = 0.1  # relevant if using MAP Loss
@@ -73,6 +71,16 @@ class BaseConfig:
         self.hyp["add_output_noise_prior_predictive_sampling"] = True
         self.hyp["add_output_noise_posterior_predictive_sampling"] = True
         self.hyp["num_points_linspace_visualize"] = 500
+
+class VaryingBases(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "VaryingBases"
+        self.hyp["model"] = "GP"
+        
+
+
 
 
 # First Configuration
