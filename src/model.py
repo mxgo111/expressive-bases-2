@@ -584,6 +584,14 @@ class NLM(nn.Module):
         x_train_np = x_train.detach().cpu().numpy().squeeze()
         basis_train_np = self.basis(x_train).detach().cpu().numpy()
 
+        if num_final_layers <= num_cols:
+            nrows = 1
+            num_cols = num_final_layers
+        elif num_final_layers % num_cols == 0:
+            nrows = num_final_layers // num_cols
+        else:
+            nrows = 
+
         fig, axs = plt.subplots(
             max(num_final_layers // numcols + 1, 2), numcols, figsize=(40, 15)
         )

@@ -109,7 +109,7 @@ class VaryingBasesFourierScale(BaseConfig):
         self.hyp["experiment_name"] = "VaryingBasesScale"
         self.hyp["model"] = "BayesianRegression"
         self.hyp["basis"] = "Fourier"
-        self.hyp["num_bases"] = MultipleRuns([5, 10, 20, 40, 80])
+        self.hyp["num_bases"] = MultipleRuns([5, 10, 20])
         self.hyp["rand_init_seed"] = 5
 
 class VaryingBasesOther(BaseConfig):

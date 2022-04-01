@@ -46,7 +46,7 @@ def create_fourier_basis(num_bases):
     def random_fourier_basis(x):
         basis_vals = np.zeros((len(x), num_bases))
         for i in range(num_bases):
-            basis_vals[:,i] = np.sqrt(2)/np.sqrt(num_bases) * 5 * np.cos(omegas[i] * x.flatten() + bs[i])
+            basis_vals[:,i] = np.sqrt(2)/np.sqrt(num_bases) * np.cos(omegas[i] * x.flatten() + bs[i])
         return torch.tensor(basis_vals)
     return random_fourier_basis
 
