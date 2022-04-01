@@ -119,7 +119,8 @@ def analyze_model(
     # POTENTIALLY DO STUFF LIKE VISUALIZATIONS AND SAVING TO FILES HERE
     # print(hyp["num_bases"])
     # print(model.model.posterior_mu.detach().cpu().numpy()[-2])
-    model.visualize_bases(x_train, y_train, savefig=visualize_bases_path)
+    if hyp["visualize_bases"]:
+        model.visualize_bases(x_train, y_train, savefig=visualize_bases_path)
     model.visualize_posterior_predictive(
         x_train, y_train, savefig=visualize_posterior_path
     )

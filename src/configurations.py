@@ -67,10 +67,33 @@ class BaseConfig:
 
         # sampling and other parameters
         self.hyp["train_print_freq"] = 1000
-        self.hyp["posterior_prior_predictive_samples"] = 3000
+        self.hyp["posterior_prior_predictive_samples"] = 10000
         self.hyp["add_output_noise_prior_predictive_sampling"] = True
         self.hyp["add_output_noise_posterior_predictive_sampling"] = True
         self.hyp["num_points_linspace_visualize"] = 500
+
+        # RFFs
+        self.hyp["omega_scale"] = 1.0
+
+        self.hyp["visualize_bases"] = True
+
+class RFFs(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "RFFs"
+        self.hyp["model"] = "BayesianRegression"
+        self.hyp["basis"] = "Fourier"
+        self.hyp["activation"] = "LeakyReLU"
+        self.hyp["num_bases"] = 1000
+        self.hyp["rand_init_seed"] = 0
+        self.hyp["layers"] = [1, 50, 1]
+        self.hyp["omega_scale"] = MultipleRuns([0.01, 0.1, 1.0, 10.0, 100.0])
+        self.hyp["visualize_bases"] = False
+
+        # self.hyp["length_scale"] = MultipleRuns([0.01, 0.1, 1.0, 10.0, 100.0])  # for GP
+        self.hyp["rbf_multiplier"] = 0.1  # for GP
+        # self.hyp["omega_scale"] = 10
 
 
 class VaryingBasesNLM(BaseConfig):

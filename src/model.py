@@ -244,8 +244,8 @@ class GP:
     def __init__(self, hyp):
         self.hyp = hyp
         self.kernel = hyp["rbf_multiplier"] * RBF(
-            length_scale=hyp["length_scale"], length_scale_bounds=(1e-5, 8)  # 0.8
-        ) + WhiteKernel(hyp["output_var"], noise_level_bounds=(1e-2, 1))
+            length_scale=hyp["length_scale"], length_scale_bounds=(hyp["length_scale"] - np.finfo(float).eps, hyp["length_scale"] + np.finfo(float).eps)  # 0.8
+        ) + WhiteKernel(hyp["output_var"], noise_level_bounds=(hyp["output_var"] - np.finfo(float).eps, hyp["output_var"] + np.finfo(float).eps))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.model = GaussianProcessRegressor(
@@ -259,11 +259,11 @@ class GP:
         if len(x_test.shape) < 2:
             x_test = x_test.reshape(-1, 1)
         gp_pred, gp_sigma = self.model.predict(x_test, return_std=True)
-        return gp_pred, gp_sigma**2
+        return gp_pred, gp_sigma
 
     def get_uncertainty_area(self, x_test):
-        _, gp_sigma_squared = self.predict(x_test)
-        return np.mean(np.sqrt(gp_sigma_squared)) * 3.92, np.var(gp_sigma_squared)
+        _, gp_sigma = self.predict(x_test)
+        return np.mean(gp_sigma) * 3.92, np.var(gp_sigma ** 2)
 
     def visualize_uncertainty(self, x_train, y_train, savefig=None):
 
@@ -285,8 +285,8 @@ class GP:
         ):
             plt.fill_between(
                 x_test,
-                gp_pred - z * np.sqrt(gp_sigma),
-                gp_pred + z * np.sqrt(gp_sigma),
+                gp_pred - z * gp_sigma,
+                gp_pred + z * gp_sigma,
                 alpha=alpha,
                 # fc="b",
                 # label=f"{cint}% confidence interval",
@@ -350,7 +350,7 @@ class NLM(nn.Module):
             if self.hyp["basis"] == "OneBasisIsData":
                 self.basis = create_adv_basis(self.hyp["num_bases"])
             if self.hyp["basis"] == "Fourier":
-                self.basis = create_fourier_basis(self.hyp["num_bases"])
+                self.basis = create_fourier_basis(self.hyp["num_bases"], self.hyp["omega_scale"])
             if self.hyp["basis"] == "OneBasisIsDataFourier":
                 self.basis = create_fourier_basis_one_match(self.hyp["num_bases"])
 
@@ -584,13 +584,13 @@ class NLM(nn.Module):
         x_train_np = x_train.detach().cpu().numpy().squeeze()
         basis_train_np = self.basis(x_train).detach().cpu().numpy()
 
-        if num_final_layers <= num_cols:
-            nrows = 1
-            num_cols = num_final_layers
-        elif num_final_layers % num_cols == 0:
-            nrows = num_final_layers // num_cols
-        else:
-            nrows = 
+        # if num_final_layers <= num_cols:
+        #     nrows = 1
+        #     num_cols = num_final_layers
+        # elif num_final_layers % num_cols == 0:
+        #     nrows = num_final_layers // num_cols
+        # else:
+        #     pass
 
         fig, axs = plt.subplots(
             max(num_final_layers // numcols + 1, 2), numcols, figsize=(40, 15)

@@ -37,16 +37,18 @@ def create_adv_basis(num_bases):
     return random_adv_basis
 
 
-def create_fourier_basis(num_bases):
+def create_fourier_basis(num_bases, omega_scale=1.0):
     # source:
     # https://gregorygundersen.com/blog/2019/12/23/random-fourier-features/#kimeldorf1971some
-    omegas = np.random.randn(num_bases)
+    omegas = np.random.normal(loc=0, scale=omega_scale, size=num_bases)
     bs = np.random.uniform(low=0.0, high=np.pi*2, size=num_bases)
+    # a = 1/np.sqrt(np.sqrt(2 * np.pi) / omega_scale)
+    a = 1
     global random_fourier_basis
     def random_fourier_basis(x):
         basis_vals = np.zeros((len(x), num_bases))
         for i in range(num_bases):
-            basis_vals[:,i] = np.sqrt(2)/np.sqrt(num_bases) * np.cos(omegas[i] * x.flatten() + bs[i])
+            basis_vals[:,i] = np.sqrt(2)/(np.sqrt(num_bases)) * a * np.cos(omegas[i] * x.flatten() + bs[i])
         return torch.tensor(basis_vals)
     return random_fourier_basis
 
