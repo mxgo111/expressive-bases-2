@@ -43,7 +43,7 @@ class BaseConfig:
         self.hyp["output_var"] = 0.01
 
         # model parameters
-        self.hyp["basis"] = "FullyConnected"  # or Custom, Legendre, Fourier
+        self.hyp["basis"] = "FullyConnected"  # or Legendre, Fourier
         self.hyp["final_layer"] = "FullyConnected"
         self.hyp[
             "model"
@@ -91,7 +91,7 @@ class RFFsklearn(BaseConfig):
         # self.hyp["model"] = "GP"
         self.hyp["basis"] = "RFFsklearn"
         self.hyp["num_bases"] = 800
-        # self.hyp["length_scale"] = MultipleRuns([0.01, 0.1, 1.0, 10.0, 100.0])
+        self.hyp["length_scale"] = MultipleRuns([0.01, 0.1, 1.0, 10.0, 100.0])
         self.hyp["length_scale"] = np.sqrt(0.1)
         self.hyp["rand_init_seed"] = 0
         self.hyp["include_bias"] = True
