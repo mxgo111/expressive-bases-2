@@ -1,2 +1,7 @@
 implement prior predictives?
 multiple wrapper
+
+4/4
+clean up implementation of have one/two true function(s), etc.
+clean up graphing the bases values
+use implementation of marginal log likelihood (in analyze_data)

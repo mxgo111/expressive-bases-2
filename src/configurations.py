@@ -54,7 +54,8 @@ class BaseConfig:
         self.hyp["num_bases"] = 20
         self.hyp["layers"] = [1, 50, 1]
         self.hyp["output_activation"] = True
-        self.hyp["bias"] = True
+        self.hyp["bias"] = True # in the fully connected model
+        self.hyp["include_bias"] = True # in the Bayesian Regression
         self.hyp["rand_init_mean"] = 0.0
         self.hyp["rand_init_std"] = 1.0
         self.hyp["rand_init_seed"] = 0  # goto for multiple runs of the same parameters
@@ -75,25 +76,47 @@ class BaseConfig:
         # RFFs
         self.hyp["omega_scale"] = 1.0
 
+        # GPs
+        self.hyp["white_kernel_noise_level"] = self.hyp["output_var"]
+
         self.hyp["visualize_bases"] = True
+        self.hyp["length_scale"] = 0.1  # also used for RFFsklearn
+
+class RFFsklearn(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "RFFsklearn"
+        self.hyp["model"] = "BayesianRegression"
+        # self.hyp["model"] = "GP"
+        self.hyp["basis"] = "RFFsklearn"
+        self.hyp["num_bases"] = 800
+        # self.hyp["length_scale"] = MultipleRuns([0.01, 0.1, 1.0, 10.0, 100.0])
+        self.hyp["length_scale"] = np.sqrt(0.1)
+        self.hyp["rand_init_seed"] = 0
+        self.hyp["include_bias"] = True
+        self.hyp["visualize_bases"] = False
+
 
 class RFFs(BaseConfig):
     def __init__(self):
         super().__init__()
         # experiment_name
         self.hyp["experiment_name"] = "RFFs"
-        self.hyp["model"] = "BayesianRegression"
+        self.hyp["model"] = "GP"
         self.hyp["basis"] = "Fourier"
-        self.hyp["activation"] = "LeakyReLU"
         self.hyp["num_bases"] = 1000
         self.hyp["rand_init_seed"] = 0
-        self.hyp["layers"] = [1, 50, 1]
-        self.hyp["omega_scale"] = MultipleRuns([0.01, 0.1, 1.0, 10.0, 100.0])
+        self.hyp["omega_scale"] = MultipleRuns([1.0])
         self.hyp["visualize_bases"] = False
+        self.hyp["include_bias"] = False
 
         # self.hyp["length_scale"] = MultipleRuns([0.01, 0.1, 1.0, 10.0, 100.0])  # for GP
-        self.hyp["rbf_multiplier"] = 0.1  # for GP
+        # self.hyp["rbf_multiplier"] = MultipleRuns([0.1, 1.0, 10.0])  # for GP
         # self.hyp["omega_scale"] = 10
+        self.hyp["white_kernel_noise_level"] = 0.01
+        self.hyp["length_scale"] = 0.1
+
 
 
 class VaryingBasesNLM(BaseConfig):
@@ -107,6 +130,7 @@ class VaryingBasesNLM(BaseConfig):
         self.hyp["num_bases"] = MultipleRuns([5, 10, 20, 40, 80])
         self.hyp["rand_init_seed"] = MultipleRuns([0, 1, 2, 3, 4])
         self.hyp["layers"] = [1, 50, 1]
+
 
 class VaryingBasesGP(BaseConfig):
     def __init__(self):

@@ -1,14 +1,4 @@
 from util import *
-torch.set_default_tensor_type(torch.DoubleTensor)
-
-def cubic(x):
-    return torch.pow(x, 3.0)
-
-def sine(x):
-    return torch.sin(x)
-
-def xsinx(x):
-    return torch.multiply(x, torch.sin(x))
 
 def generate_data(hyp, random_seed=0, test=False):
     '''

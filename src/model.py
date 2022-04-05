@@ -92,6 +92,8 @@ class BayesianRegression(nn.Module):
         self.posterior_mu = None
         self.posterior_cov = None
 
+        self.include_bias = hyp["include_bias"] # whether to use data_to_features
+
     def data_to_features(self, x):
         """
         Concatenate features x with a column of 1s (for bias)
@@ -139,7 +141,10 @@ class BayesianRegression(nn.Module):
         Infers posterior and stores it within the class instance
         """
 
-        phi = self.data_to_features(x)
+        if self.include_bias:
+            phi = self.data_to_features(x)
+        else:
+            phi = x
         assert len(phi.shape) == 2
 
         (
@@ -156,7 +161,10 @@ class BayesianRegression(nn.Module):
         if self.posterior == None:
             return self.sample_prior_predictive(x, num_samples, add_noise=add_noise)
 
-        phi = self.data_to_features(x)
+        if self.include_bias:
+            phi = self.data_to_features(x)
+        else:
+            phi = x
 
         weights = self.posterior.rsample(torch.Size([num_samples]))
         assert weights.shape == (num_samples, phi.shape[-1])
@@ -170,7 +178,11 @@ class BayesianRegression(nn.Module):
             return r
 
     def sample_prior_predictive(self, x, num_samples, add_noise=True):
-        phi = self.data_to_features(x)
+
+        if self.include_bias:
+            phi = self.data_to_features(x)
+        else:
+            phi = x
 
         weights = dists.Normal(0.0, math.sqrt(self.weights_var)).sample(
             (num_samples, phi.shape[-1])
@@ -244,12 +256,16 @@ class GP:
     def __init__(self, hyp):
         self.hyp = hyp
         self.kernel = hyp["rbf_multiplier"] * RBF(
-            length_scale=hyp["length_scale"], length_scale_bounds=(hyp["length_scale"] - np.finfo(float).eps, hyp["length_scale"] + np.finfo(float).eps)  # 0.8
-        ) + WhiteKernel(hyp["output_var"], noise_level_bounds=(hyp["output_var"] - np.finfo(float).eps, hyp["output_var"] + np.finfo(float).eps))
+            # length_scale=hyp["length_scale"], length_scale_bounds=(hyp["length_scale"] - np.finfo(float).eps, hyp["length_scale"] + np.finfo(float).eps)  # 0.8
+            length_scale=hyp["length_scale"], length_scale_bounds="fixed"
+         ) + WhiteKernel(noise_level=hyp["white_kernel_noise_level"], noise_level_bounds="fixed")
+        # + WhiteKernel(hyp["white_kernel_noise_level"], noise_level_bounds=(hyp["output_var"] - np.finfo(float).eps, hyp["output_var"] + np.finfo(float).eps))
+
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.model = GaussianProcessRegressor(
-                kernel=self.kernel, n_restarts_optimizer=10
+                kernel=self.kernel, n_restarts_optimizer=1
             )
 
     def fit(self, x_train, y_train):
@@ -278,21 +294,47 @@ class GP:
         gp_pred = gp_pred.reshape(-1)
         gp_sigma = gp_sigma.reshape(-1)
 
-        ax.plot(x_test, gp_pred, color="blue", lw=3, label="Predictive Mean")
+        # ax.plot(x_test, gp_pred, color="blue", lw=3, label="Predictive Mean")
+        #
+        # for (z, cint), alpha in zip(
+        #     [(0.674, 50.0), (1.0, 68.0), (1.96, 95.0)], [0.4, 0.3, 0.2]
+        # ):
+        #     plt.fill_between(
+        #         x_test,
+        #         gp_pred - z * gp_sigma,
+        #         gp_pred + z * gp_sigma,
+        #         alpha=alpha,
+        #         # fc="b",
+        #         # label=f"{cint}% confidence interval",
+        #         label="{}%-PICP".format(cint),
+        #         color="steelblue",
+        #     )
+        #
+        # # plot training data
+        # ax.scatter(
+        #     x_train, y_train, color="red", s=10.0, zorder=10, label="Training Data"
+        # )
 
-        for (z, cint), alpha in zip(
-            [(0.674, 50.0), (1.0, 68.0), (1.96, 95.0)], [0.4, 0.3, 0.2]
-        ):
-            plt.fill_between(
+        y_pred = torch.tensor(self.model.sample_y(x_test.reshape(-1, 1), n_samples=self.hyp["posterior_prior_predictive_samples"], random_state=0)).squeeze()
+
+        fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+
+        # plot predictive intervals
+        for picp, alpha in zip([50.0, 68.0, 95.0], [0.4, 0.3, 0.2]):
+            lower, upper = get_coverage_bounds(to_np(y_pred), picp)
+
+            ax.fill_between(
                 x_test,
-                gp_pred - z * gp_sigma,
-                gp_pred + z * gp_sigma,
-                alpha=alpha,
-                # fc="b",
-                # label=f"{cint}% confidence interval",
-                label="{}%-PICP".format(cint),
+                lower,
+                upper,
+                label="{}%-PICP".format(picp),
                 color="steelblue",
+                alpha=alpha,
             )
+
+        # plot predictive mean
+        pred_mean = to_np(torch.mean(y_pred, -1))
+        ax.plot(x_test, pred_mean, color="blue", lw=3, label="Predictive Mean")
 
         # plot training data
         ax.scatter(
@@ -353,6 +395,8 @@ class NLM(nn.Module):
                 self.basis = create_fourier_basis(self.hyp["num_bases"], self.hyp["omega_scale"])
             if self.hyp["basis"] == "OneBasisIsDataFourier":
                 self.basis = create_fourier_basis_one_match(self.hyp["num_bases"])
+            if self.hyp["basis"] == "RFFsklearn":
+                self.basis = create_rffs_sklearn(self.hyp["num_bases"], length_scale=hyp["length_scale"])
 
         self.model_id = None
 

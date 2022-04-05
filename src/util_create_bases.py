@@ -1,4 +1,16 @@
 from imports import *
+from sklearn.kernel_approximation import RBFSampler
+
+torch.set_default_tensor_type(torch.DoubleTensor)
+
+def cubic(x):
+    return torch.pow(x, 3.0)
+
+def sine(x):
+    return torch.sin(x)
+
+def xsinx(x):
+    return torch.multiply(x, torch.sin(x))
 
 def create_legendre_basis(deg):
     l = [None]*deg
@@ -23,7 +35,7 @@ def create_random_linear_basis(num_bases):
         return torch.tensor(basis_vals)
     return random_linear_basis
 
-
+# needs to be deleted
 def create_adv_basis(num_bases):
     slopes = np.random.uniform(low=-5.0, high=5.0, size=num_bases)
     intercepts = np.random.uniform(low=-5.0, high=5.0, size=num_bases)
@@ -52,7 +64,19 @@ def create_fourier_basis(num_bases, omega_scale=1.0):
         return torch.tensor(basis_vals)
     return random_fourier_basis
 
+def create_one_basis_match(create_bases_function, correct_basis_function, num_bases):
+    """
+    Creates a set of bases with one of the bases being correct
+    """
+    basis_function = create_bases_function(num_bases)
+    global one_basis_match
+    def one_basis_match(x):
+        basis_vals = basis_function(x)
+        basis_vals[:,-1] = torch.tensor(correct_basis_function(x))
+        return torch.tensor(basis_vals)
+    return one_basis_match
 
+# also needs to be deleted
 def create_fourier_basis_one_match(num_bases):
     omegas = np.random.randn(num_bases)
     bs = np.random.uniform(low=0.0, high=np.pi*2, size=num_bases)
@@ -64,6 +88,15 @@ def create_fourier_basis_one_match(num_bases):
         basis_vals[:,-1] = torch.pow(x.flatten(), 3.0) # cubic
         return torch.tensor(basis_vals)
     return random_fourier_basis_one_match
+
+# new rffs based on sklearn
+def create_rffs_sklearn(num_bases, length_scale):
+    rbf_features = RBFSampler(gamma=1/(2 * (length_scale ** 2)), n_components=num_bases, random_state=1)
+    global rffs_sklearn
+    def rffs_sklearn(x):
+        basis_vals = rbf_features.fit_transform(x.reshape(-1, 1))
+        return torch.tensor(basis_vals)
+    return rffs_sklearn
 
 # # the below is attempting to create basis from vector
 # # but we decided it's fine to have
