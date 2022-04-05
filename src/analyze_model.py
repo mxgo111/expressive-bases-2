@@ -109,6 +109,7 @@ def analyze_model(
     model_id = get_unique_id()
     this_model_path = models_path + model_id + ".obj"
     visualize_bases_path = models_path + model_id + "-bases"
+    visualize_bases_weights_hist_path = models_path + model_id + "-bases-weights_hist"
     visualize_prior_path = models_path + model_id + "-prior"
     visualize_posterior_path = models_path + model_id + "-posterior"
 
@@ -124,6 +125,7 @@ def analyze_model(
     model.visualize_posterior_predictive(
         x_train, y_train, savefig=visualize_posterior_path
     )
+    model.visualize_posterior_weights_mean_hist(savefig = visualize_bases_weights_hist_path)
     model.visualize_prior_predictive(x_train, y_train, savefig=visualize_prior_path)
 
     # plot var of var to check

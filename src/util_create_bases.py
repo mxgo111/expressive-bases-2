@@ -76,8 +76,7 @@ def create_one_basis_match(create_bases_function, correct_basis_function, num_ba
         return torch.tensor(basis_vals)
     return one_basis_match
 
-# also needs to be deleted
-def create_fourier_basis_one_match(num_bases):
+def create_fourier_basis_one_match(num_bases,data = "cubic"):
     omegas = np.random.randn(num_bases)
     bs = np.random.uniform(low=0.0, high=np.pi*2, size=num_bases)
     global random_fourier_basis_one_match
@@ -86,6 +85,8 @@ def create_fourier_basis_one_match(num_bases):
         for i in range(num_bases):
             basis_vals[:,i] = np.sqrt(2)/np.sqrt(num_bases) * np.cos(omegas[i] * x.flatten() + bs[i])
         basis_vals[:,-1] = torch.pow(x.flatten(), 3.0) # cubic
+        if data == "cubic":
+            basis_vals[:,-1] = torch.pow(x.flatten(), 3.0) # cubic
         return torch.tensor(basis_vals)
     return random_fourier_basis_one_match
 
@@ -97,6 +98,33 @@ def create_rffs_sklearn(num_bases, length_scale):
         basis_vals = rbf_features.fit_transform(x.reshape(-1, 1))
         return torch.tensor(basis_vals)
     return rffs_sklearn
+
+def create_random_linear_basis_one_match(num_bases,data = "cubic"):
+    slopes = np.random.uniform(low=-5.0, high=5.0, size=num_bases)
+    intercepts = np.random.uniform(low=-5.0, high=5.0, size=num_bases)
+    global random_linear_basis_one_match
+    def random_linear_basis_one_match(x):
+        basis_vals = np.zeros((len(x), num_bases))
+        for i in range(num_bases):
+            basis_vals[:,i] = slopes[i] * x.flatten() + intercepts[i]
+        if data == "cubic":
+            basis_vals[:,-1] = torch.pow(x.flatten(), 3.0) # cubic
+        return torch.tensor(basis_vals)
+    return random_linear_basis_one_match
+
+def create_legendre_basis_one_match(num_bases,data = "cubic"):
+    omegas = np.random.randn(num_bases)
+    bs = np.random.uniform(low=0.0, high=np.pi*2, size=num_bases)
+    global random_legendre_basis_one_match
+    def random_legendre_basis_one_match(x):
+        basis_vals = np.zeros((len(x), num_bases))
+        for i in range(num_bases):
+            basis_vals[:,i] = np.sqrt(2)/np.sqrt(num_bases) * np.cos(omegas[i] * x.flatten() + bs[i])
+        if data == "cubic":
+            basis_vals[:,-1] = torch.pow(x.flatten(), 3.0) # cubic
+        return torch.tensor(basis_vals)
+    return random_legendre_basis_one_match
+
 
 # # the below is attempting to create basis from vector
 # # but we decided it's fine to have

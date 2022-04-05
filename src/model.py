@@ -397,6 +397,10 @@ class NLM(nn.Module):
                 self.basis = create_fourier_basis_one_match(self.hyp["num_bases"])
             if self.hyp["basis"] == "RFFsklearn":
                 self.basis = create_rffs_sklearn(self.hyp["num_bases"], length_scale=hyp["length_scale"])
+            if self.hyp["basis"] == "OneBasisIsDataLegendre":
+                self.basis = create_legendre_basis_one_match(self.hyp["num_bases"])
+            if self.hyp["basis"] == "OneBasisIsDataRandomLinear":
+                self.basis = create_random_linear_basis_one_match(self.hyp["num_bases"])
 
         self.model_id = None
 
@@ -639,6 +643,8 @@ class NLM(nn.Module):
         fig, axs = plt.subplots(
             max(num_final_layers // numcols + 1, 2), numcols, figsize=(40, 15)
         )
+
+        self.bases_weights_means = []
         for j in range(num_final_layers):
             i = argsorted_basis[j]
             row, col = j // numcols, j % numcols
@@ -653,6 +659,7 @@ class NLM(nn.Module):
                 w_posterior_mu = self.model.posterior_mu.detach().cpu().numpy()[i]
 
             axs[row, col].set_title(f"w_posterior_mean={np.round(w_posterior_mu, 3)}")
+            self.bases_weights_means.append(w_posterior_mu)
         plt.tight_layout()
 
         if savefig != None:
@@ -661,3 +668,9 @@ class NLM(nn.Module):
         plt.close()
 
         return basis_vals
+
+    def visualize_posterior_weights_mean_hist(self,savefig):
+    plt.hist(self.bases_weights_means)
+    if savefig != None:
+        plt.savefig(savefig)
+    plt.close()
