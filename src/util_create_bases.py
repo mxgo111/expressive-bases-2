@@ -6,11 +6,23 @@ torch.set_default_tensor_type(torch.DoubleTensor)
 def cubic(x):
     return torch.pow(x, 3.0)
 
+def cubic_shifted(x):
+    return torch.pow(x, 3.0) + 0.3
+
 def sine(x):
     return torch.sin(x)
 
 def xsinx(x):
     return torch.multiply(x, torch.sin(x))
+
+def cubic_minus_quadratic(x):
+    return torch.pow(x, 3.0) - torch.pow(x, 2.0)
+
+def quadratic(x):
+    return torch.pow(x, 2.0)
+
+def quadratic_ish(x):
+    return torch.pow(x-0.1, 2.0)
 
 def create_legendre_basis(deg):
     l = [None]*deg
@@ -64,17 +76,21 @@ def create_fourier_basis(num_bases, omega_scale=1.0):
         return torch.tensor(basis_vals)
     return random_fourier_basis
 
-def create_one_basis_match(create_bases_function, correct_basis_function, num_bases):
+def create_custom_basis(create_bases_function, num_bases, *functions):
     """
     Creates a set of bases with one of the bases being correct
     """
+    assert len(functions) <= num_bases
     basis_function = create_bases_function(num_bases)
-    global one_basis_match
-    def one_basis_match(x):
+    global custom_basis
+    def custom_basis(x):
         basis_vals = basis_function(x)
-        basis_vals[:,-1] = torch.tensor(correct_basis_function(x))
-        return torch.tensor(basis_vals)
-    return one_basis_match
+        for i, func in enumerate(functions):
+            # print(func(x).squeeze().shape)
+            # import sys; sys.exit()
+            basis_vals[:,-(i+1)] = func(x).squeeze()
+        return basis_vals.clone().detach()
+    return custom_basis
 
 def create_fourier_basis_one_match(num_bases,data = "cubic"):
     omegas = np.random.randn(num_bases)
@@ -91,7 +107,7 @@ def create_fourier_basis_one_match(num_bases,data = "cubic"):
     return random_fourier_basis_one_match
 
 # new rffs based on sklearn
-def create_rffs_sklearn(num_bases, length_scale):
+def create_rffs_sklearn(num_bases, length_scale=0.1):
     rbf_features = RBFSampler(gamma=1/(2 * (length_scale ** 2)), n_components=num_bases, random_state=1)
     global rffs_sklearn
     def rffs_sklearn(x):
@@ -112,7 +128,7 @@ def create_random_linear_basis_one_match(num_bases,data = "cubic"):
         return torch.tensor(basis_vals)
     return random_linear_basis_one_match
 
-def create_legendre_basis_one_match(num_bases,data = "cubic"):
+def create_legendre_basis_one_match(num_bases, data = "cubic"):
     omegas = np.random.randn(num_bases)
     bs = np.random.uniform(low=0.0, high=np.pi*2, size=num_bases)
     global random_legendre_basis_one_match
@@ -125,6 +141,12 @@ def create_legendre_basis_one_match(num_bases,data = "cubic"):
         return torch.tensor(basis_vals)
     return random_legendre_basis_one_match
 
+
+names_to_bases = {
+    "Legendre": create_legendre_basis,
+    "RFFsklearn": create_rffs_sklearn,
+
+}
 
 # # the below is attempting to create basis from vector
 # # but we decided it's fine to have

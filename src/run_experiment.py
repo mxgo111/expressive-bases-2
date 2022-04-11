@@ -29,7 +29,7 @@ def run_multiple_models(config_object):
             for hyp in all_hyps:
                 hyp[key] = config[key]
 
-    print(f"Number of sets of hyperparameters: {len(all_hyps)}")
+    # print(f"Number of sets of hyperparameters: {len(all_hyps)}")
 
     for hyp in all_hyps:
         run_single_model(hyp)
@@ -120,7 +120,7 @@ def run_single_model(hyp):
 if __name__ == "__main__":
     # testing multiple runs
     # run_multiple_models(VaryingBasesNLM())
-    run_multiple_models(RFFsklearn())
+    run_multiple_models(NegativeLogLikelihood())
     # run_multiple_models(VaryingBasesGP())
     # run_multiple_models(TestingFourier())
     # run_single_model(GPConfig().hyp)

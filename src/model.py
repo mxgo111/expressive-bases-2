@@ -196,7 +196,6 @@ class BayesianRegression(nn.Module):
             return add_output_noise(r, self.output_var)
         return r
 
-    # define MLL loss
     def marginal_log_likelihood(self, alpha, beta, x, y):
         """
         Log likelihood of the data marginalised over the weights w. See chapter 3.5 of
@@ -215,6 +214,9 @@ class BayesianRegression(nn.Module):
 
         # alpha = self.hyp["w_prior_var"]
         # beta = self.hyp["output_var"]
+
+        # print(x)
+        # import sys; sys.exit()
 
         # dimensionality of input datapoint
         D = x.shape[1]
@@ -235,6 +237,12 @@ class BayesianRegression(nn.Module):
         m = beta * np.dot(K_inv, Theta.T)
         m = np.dot(m, y)
 
+        # print(m)
+        # m = self.posterior_mu
+        # 
+        # print(m)
+        # import sys; sys.exit()
+
         mll = D / 2 * np.log(alpha)
         mll += N / 2 * np.log(beta)
         mll -= N / 2 * np.log(2 * np.pi)
@@ -244,8 +252,57 @@ class BayesianRegression(nn.Module):
 
         return mll.squeeze()
 
-    def negative_marginal_log_likelihood(self, alpha, beta, x, y):
-        return -self.marginal_log_likelihood(alpha, beta, x, y)
+
+    # # define MLL loss
+    # def marginal_log_likelihood(self, alpha, beta, x, y):
+    #     """
+    #     Log likelihood of the data marginalised over the weights w. See chapter 3.5 of
+    #     the book by Bishop of an derivation.
+    #     Parameters
+    #     ---------
+    #     x, y: input datapoints and corresponding y values. x is of dimension N x D
+    #     alpha: variance prior on weights
+    #     beta: output variance on y
+    #
+    #     Returns
+    #     -------
+    #     float
+    #         lnlikelihood + prior
+    #     """
+    #
+    #     # alpha = self.hyp["w_prior_var"]
+    #     # beta = self.hyp["output_var"]
+    #
+    #     # dimensionality of input datapoint
+    #     D = x.shape[1]
+    #     N = x.shape[0]
+    #
+    #     # TODO: currently x is basis(x_train)
+    #     # can add if using a basis function then do a transformation first
+    #
+    #     Theta = to_np(x)
+    #
+    #     K = beta * np.dot(Theta.T, Theta)
+    #     K += np.eye(Theta.shape[1]) * alpha
+    #     try:
+    #         K_inv = np.linalg.inv(K)
+    #     except np.linalg.linalg.LinAlgError:
+    #         K_inv = np.linalg.inv(K + np.random.rand(K.shape[0], K.shape[1]) * 1e-8)
+    #
+    #     m = beta * np.dot(K_inv, Theta.T)
+    #     m = np.dot(m, y)
+    #
+    #     mll = D / 2 * np.log(alpha)
+    #     mll += N / 2 * np.log(beta)
+    #     mll -= N / 2 * np.log(2 * np.pi)
+    #     mll -= beta / 2.0 * np.linalg.norm(y - np.dot(Theta, m), 2)
+    #     mll -= alpha / 2.0 * np.dot(m.T, m)
+    #     mll -= 0.5 * np.log(np.linalg.det(K) + 1e-10)
+    #
+    #     return mll.squeeze()
+
+    def negative_marginal_log_likelihood(self, basis, x_train, y_train):
+        return -self.marginal_log_likelihood(1/self.weights_var, 1/self.output_var, basis(x_train), y_train)
 
     def posterior_contraction(self):
         return torch.sum(1 - torch.diag(self.posterior_cov)).detach().cpu().numpy()
@@ -351,6 +408,9 @@ class GP:
 
         plt.close()
 
+    def negative_marginal_log_likelihood(x_train, y_train):
+        return -self.model.log_marginal_likelihood()
+
 
 class NLM(nn.Module):
     def __init__(self, hyp):
@@ -401,6 +461,8 @@ class NLM(nn.Module):
                 self.basis = create_legendre_basis_one_match(self.hyp["num_bases"])
             if self.hyp["basis"] == "OneBasisIsDataRandomLinear":
                 self.basis = create_random_linear_basis_one_match(self.hyp["num_bases"])
+            if self.hyp["basis"] == "Custom":
+                self.basis = create_custom_basis(create_rffs_sklearn, self.hyp["num_bases"], *self.hyp["custom_bases"])
 
         self.model_id = None
 
@@ -484,13 +546,13 @@ class NLM(nn.Module):
         print("Final Loss = {}".format(min_loss))
 
         (self.basis, self.final_layer), self.min_loss = best_model, min_loss
-
-        negative_mll = self.model.negative_marginal_log_likelihood(
-            self.hyp["w_prior_var"],
-            self.hyp["output_var"],
-            self.basis(x_train),
-            y_train,
-        )
+        #
+        # negative_mll = self.model.negative_marginal_log_likelihood(
+        #     self.hyp["w_prior_var"],
+        #     self.hyp["output_var"],
+        #     x_train,
+        #     y_train,
+        # )
 
         # print('Negative marginal log likelhood =', negative_mll) # the smaller the better
 
@@ -645,6 +707,7 @@ class NLM(nn.Module):
         )
 
         self.bases_weights_means = []
+        self.bases_log_weights_variances = []
         for j in range(num_final_layers):
             i = argsorted_basis[j]
             row, col = j // numcols, j % numcols
@@ -657,9 +720,11 @@ class NLM(nn.Module):
                 w_posterior_mu = 0
             else:
                 w_posterior_mu = self.model.posterior_mu.detach().cpu().numpy()[i]
+                log_w_posterior_cov = np.log(self.model.posterior_cov.detach().cpu().numpy()[i][i])
 
-            axs[row, col].set_title(f"w_posterior_mean={np.round(w_posterior_mu, 3)}")
+            axs[row, col].set_title(f"w_posterior_mean={np.round(w_posterior_mu, 3)}\nlog_w_posterior_cov={np.round(log_w_posterior_cov)}")
             self.bases_weights_means.append(w_posterior_mu)
+            self.bases_log_weights_variances.append(log_w_posterior_cov)
         plt.tight_layout()
 
         if savefig != None:
@@ -670,7 +735,17 @@ class NLM(nn.Module):
         return basis_vals
 
     def visualize_posterior_weights_mean_hist(self,savefig):
-    plt.hist(self.bases_weights_means)
-    if savefig != None:
-        plt.savefig(savefig)
-    plt.close()
+        plt.hist(self.bases_weights_means[:-2], bins=self.hyp["num_bases"], color="blue")
+        plt.hist(self.bases_weights_means[-2:], bins=self.hyp["num_bases"]//2, color="red")
+        plt.title("Distribution of posterior means")
+        if savefig != None:
+            plt.savefig(savefig)
+        plt.close()
+
+    def visualize_posterior_weights_variances_hist(self,savefig):
+        plt.hist(self.bases_log_weights_variances[:-2], bins=self.hyp["num_bases"], color="blue")
+        plt.hist(self.bases_log_weights_variances[-2:], bins=self.hyp["num_bases"]//2, color="red")
+        plt.title("Distribution of posterior variances")
+        if savefig != None:
+            plt.savefig(savefig)
+        plt.close()

@@ -58,6 +58,11 @@ def analyze_model(
     except:
         uncertainty_area_var = None
 
+    if hyp["include_bias"]:
+        negative_mll = model.model.negative_marginal_log_likelihood(lambda x : model.model.data_to_features(model.basis(x)), x_train, y_train)
+    else:
+        negative_mll = model.model.negative_marginal_log_likelihood(model.basis, x_train, y_train)
+
     x_viz = np.linspace(
         hyp["dataset_min_range"],
         hyp["dataset_max_range"],
@@ -77,6 +82,7 @@ def analyze_model(
         "uncertainty_area",
         "uncertainty_area_var",
         "posterior_contraction",
+        "negative_mll"
     ]
 
     for col in cols:
@@ -100,6 +106,7 @@ def analyze_model(
     data["eff_dim"].append(eff_dim)
     data["uncertainty_area"].append(uncertainty_area)
     data["posterior_contraction"].append(posterior_contraction)
+    data["negative_mll"].append(negative_mll)
     try:
         data["uncertainty_area_var"].append(np.var(uncertainty_area_var))
     except:
@@ -110,6 +117,7 @@ def analyze_model(
     this_model_path = models_path + model_id + ".obj"
     visualize_bases_path = models_path + model_id + "-bases"
     visualize_bases_weights_hist_path = models_path + model_id + "-bases-weights_hist"
+    visualize_bases_weights_variances_hist_path = models_path + model_id + "-bases-weights-variances_hist"
     visualize_prior_path = models_path + model_id + "-prior"
     visualize_posterior_path = models_path + model_id + "-posterior"
 
@@ -122,10 +130,13 @@ def analyze_model(
     # print(model.model.posterior_mu.detach().cpu().numpy()[-2])
     if hyp["visualize_bases"]:
         model.visualize_bases(x_train, y_train, savefig=visualize_bases_path)
+    else:
+        model.visualize_bases(x_train, y_train, savefig=None)
     model.visualize_posterior_predictive(
         x_train, y_train, savefig=visualize_posterior_path
     )
     model.visualize_posterior_weights_mean_hist(savefig = visualize_bases_weights_hist_path)
+    model.visualize_posterior_weights_variances_hist(savefig = visualize_bases_weights_variances_hist_path)
     model.visualize_prior_predictive(x_train, y_train, savefig=visualize_prior_path)
 
     # plot var of var to check
@@ -222,6 +233,8 @@ def analyze_gp_model(
         hyp["num_points_linspace_visualize"],
     )
 
+    negative_mll = model.model.negative_marginal_log_likelihood(model.basis, x_train, y_train)
+
     x_gap = np.array(get_epistemic_gap(x_train))
 
     uncertainty_mean, uncertainty_var = model.get_uncertainty_area(x_gap)
@@ -229,6 +242,7 @@ def analyze_gp_model(
     data["uncertainty_area_var"].append(uncertainty_var)
     data["model_init_id"].append(model_init_id)
     data["model_id"].append(model_init_id)
+    data["negative_mll"].append(negative_mll)
 
     visualize_gp_path = models_path + model_init_id + "-gp"
     model.visualize_uncertainty(x_train, y_train, savefig=visualize_gp_path)
