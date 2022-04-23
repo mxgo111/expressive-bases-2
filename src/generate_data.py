@@ -21,6 +21,8 @@ def generate_data(hyp, random_seed=0, test=False):
 
         if hyp["dataset"] == "cubic":
             y = add_output_noise(cubic(x), var)
+        elif hyp["dataset"] == "cubic_shifted":
+            y = add_output_noise(cubic_shifted(x), var)
         elif hyp["dataset"] == "sine":
             y = add_output_noise(sine(x), var)
         elif hyp["dataset"] == "xsinx":

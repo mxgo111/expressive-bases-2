@@ -2,6 +2,7 @@
 Instructions: Don't delete any configurations, but instead inherit and make modifications as necessary!
 """
 import numpy as np
+from util import *
 
 
 class MultipleRuns:
@@ -76,11 +77,51 @@ class BaseConfig:
         # RFFs
         self.hyp["omega_scale"] = 1.0
 
+        # for Custom bases
+        self.hyp["custom_bases"] = []
+
         # GPs
         self.hyp["white_kernel_noise_level"] = self.hyp["output_var"]
 
         self.hyp["visualize_bases"] = True
         self.hyp["length_scale"] = 0.1  # also used for RFFsklearn
+
+class NegativeLogLikelihood(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "NegativeLogLikelihood"
+        self.hyp["model"] = "BayesianRegression"
+        self.hyp["dataset"] = "cubic_shifted"
+        # self.hyp["model"] = "GP"
+        self.hyp["basis"] = "Custom"
+        self.hyp["custom_bases"] = [cubic, quadratic]
+        self.hyp["num_bases"] = 2
+        # self.hyp["length_scale"] = MultipleRuns([0.01, 0.1, 1.0, 10.0, 100.0])
+        self.hyp["length_scale"] = np.sqrt(0.1)
+        self.hyp["rand_init_seed"] = 0
+        self.hyp["include_bias"] = True
+        self.hyp["visualize_bases"] = True
+
+        self.hyp["train_dataset_size"] = 10
+
+
+class twoSum(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        # experiment_name
+        self.hyp["experiment_name"] = "twoSum"
+        self.hyp["model"] = "BayesianRegression"
+        # self.hyp["model"] = "GP"
+        self.hyp["basis"] = "Custom"
+        self.hyp["custom_bases"] = [quadratic_ish, cubic_minus_quadratic]
+        self.hyp["num_bases"] = 100
+        # self.hyp["length_scale"] = MultipleRuns([0.01, 0.1, 1.0, 10.0, 100.0])
+        self.hyp["length_scale"] = np.sqrt(0.1)
+        self.hyp["rand_init_seed"] = 0
+        self.hyp["include_bias"] = False
+        self.hyp["visualize_bases"] = True
+
 
 class RFFsklearn(BaseConfig):
     def __init__(self):
@@ -94,7 +135,7 @@ class RFFsklearn(BaseConfig):
         # self.hyp["length_scale"] = MultipleRuns([0.01, 0.1, 1.0, 10.0, 100.0])
         self.hyp["length_scale"] = np.sqrt(0.1)
         self.hyp["rand_init_seed"] = 0
-        self.hyp["include_bias"] = True
+        self.hyp["include_bias"] = False
         self.hyp["visualize_bases"] = False
 
 
